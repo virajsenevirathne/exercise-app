@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0b0f17" />
+<title>PPL Tracker</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<style>
+  :root {
+    --bg: #0b0f17;
+    --bg-2: #121826;
+    --bg-3: #1a2233;
+    --line: #243049;
+    --text: #e6ecf5;
+    --muted: #8a96ab;
+    --accent: #4f8cff;
+    --accent-2: #7c5cff;
+    --good: #34d399;
+    --warn: #f59e0b;
+    --danger: #f87171;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  a { color: var(--accent); text-decoration: none; }
+  button { font: inherit; }
+  input, select { font: inherit; color: var(--text); background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type=number] { width: 86px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(180deg, rgba(11,15,23,.96), rgba(11,15,23,.88));
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 14px 0; padding-top: calc(14px + env(safe-area-inset-top));
+  }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .title { font-weight: 700; font-size: 1.15rem; letter-spacing: .2px; }
+  .title small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .icon-btn {
+    background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; cursor: pointer;
+  }
+  .icon-btn:active { transform: scale(.97); }
+
+  .tabs {
+    display: flex; gap: 6px; overflow-x: auto; padding: 12px 0 12px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 12px; border-radius: 999px;
+    background: var(--bg-3); color: var(--text);
+    border: 1px solid var(--line); cursor: pointer; font-size: .92rem;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; color: white; font-weight: 600;
+  }
+  .tab.rest { color: var(--muted); }
+
+  main { padding: 14px; max-width: 760px; margin: 0 auto; }
+
+  .day-header {
+    display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;
+  }
+  .day-header h2 { margin: 0; font-size: 1.1rem; }
+  .day-header .sub { color: var(--muted); font-size: .88rem; }
+
+  .card {
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .ex-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .ex-name { font-weight: 700; font-size: 1.02rem; }
+  .ex-target { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  .ex-note { color: var(--muted); font-size: .85rem; margin-top: 6px; font-style: italic; }
+
+  .yt-btn {
+    background: #2a1414; color: #ff6a6a; border: 1px solid #5a1f1f;
+    padding: 6px 10px; border-radius: 8px; font-size: .82rem; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .yt-btn:active { transform: scale(.97); }
+
+  .set-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .set-row {
+    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
+    gap: 6px; align-items: center;
+  }
+  .set-row .lbl { color: var(--muted); font-size: .82rem; text-align: center; }
+  .set-row input { width: 100%; min-width: 0; padding: 6px 8px; }
+  .set-row .rm {
+    background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 1.1rem;
+  }
+  .set-row .rm:hover { color: var(--danger); }
+
+  .set-grid-head {
+    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
+    gap: 6px; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px;
+    margin-top: 8px;
+  }
+  .set-grid-head span { text-align: center; }
+
+  .ex-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btn {
+    background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+    padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: .9rem;
+  }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; color: white; font-weight: 600;
+  }
+  .btn.ghost { background: transparent; }
+  .btn:active { transform: scale(.97); }
+
+  .history {
+    margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px;
+    display: none;
+  }
+  .history.open { display: block; }
+  .history h4 { margin: 0 0 6px; font-size: .9rem; color: var(--muted); font-weight: 600; }
+  .history .entry {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 6px; font-size: .85rem;
+  }
+  .history .entry .date { color: var(--muted); font-size: .78rem; margin-bottom: 4px; }
+  .history .entry .sets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .history .entry .pill {
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px;
+    padding: 2px 8px; font-size: .78rem;
+  }
+
+  .rest-card { text-align: center; padding: 30px 16px; color: var(--muted); }
+  .rest-card h3 { color: var(--text); margin-top: 0; }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none;
+    align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px;
+    width: 100%; max-width: 480px; padding: 16px; box-shadow: var(--shadow);
+    max-height: 86vh; overflow-y: auto;
+  }
+  .modal h3 { margin-top: 0; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  .progress-chart {
+    margin-top: 10px; background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px;
+  }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: .8rem; }
+  .bar-row .lab { width: 90px; color: var(--muted); }
+  .bar { flex: 1; height: 8px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .bar-row .val { width: 60px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .footer-note { color: var(--muted); font-size: .8rem; text-align: center; padding: 18px 10px 30px; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 999px; padding: 10px 16px; box-shadow: var(--shadow);
+    opacity: 0; transition: opacity .2s, transform .2s; z-index: 200; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+  @media (max-width: 380px) {
+    .set-row, .set-grid-head { grid-template-columns: 24px 1fr 1fr 1fr 24px; }
+    input[type=number] { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title-row">
+    <div class="title">PPL Tracker <small id="todayTag"></small></div>
+    <div style="display:flex; gap:6px">
+      <button class="icon-btn" id="statsBtn" title="Progress">&#x1F4CA;</button>
+      <button class="icon-btn" id="menuBtn" title="Menu">&#x2630;</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main id="app"></main>
+
+<div class="footer-note">
+  Tip: open this page in Chrome on Android and choose <b>Add to Home screen</b> to install it as an app.
+</div>
+
+<!-- Menu modal -->
+<div class="modal-bg" id="menuModal">
+  <div class="modal">
+    <h3>Menu</h3>
+    <div class="row">
+      <button class="btn" id="exportBtn">Export data (JSON)</button>
+      <button class="btn" id="importBtn">Import data (JSON)</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" />
+      <button class="btn" id="clearBtn" style="border-color:#5a1f1f;color:#ff8a8a">Reset all data</button>
+      <button class="btn ghost" id="closeMenu">Close</button>
+    </div>
+    <div style="margin-top:14px;color:var(--muted);font-size:.85rem">
+      Data is stored locally on this device (localStorage). Export regularly if you want a backup.
+    </div>
+  </div>
+</div>
+
+<!-- Stats modal -->
+<div class="modal-bg" id="statsModal">
+  <div class="modal">
+    <h3>Progress over time</h3>
+    <div style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Top working weight per exercise (last 8 sessions).</div>
+    <div id="statsBody"></div>
+    <div class="row">
+      <button class="btn ghost" id="closeStats">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Plan data ---------- */
+const PLAN = [
+  {
+    id: 1, name: "Day 1 · Push", focus: "Chest & Shoulders",
+    exercises: [
+      { id: "d1e1", name: "Incline Dumbbell Press", sets: 4, reps: "8–10", note: 'Builds the upper chest "shelf".', q: "incline dumbbell press proper form" },
+      { id: "d1e2", name: "Barbell Overhead Press", sets: 3, reps: "6–8", note: "Overall shoulder mass.", q: "barbell overhead press form tutorial" },
+      { id: "d1e3", name: "Chest Dips (BW or Weighted)", sets: 3, reps: "to failure", note: "Lean forward to bias chest.", q: "chest dips proper form" },
+      { id: "d1e4", name: "Cable Crossovers (Low to High)", sets: 3, reps: "12–15", note: "Squeeze at the top for upper chest.", q: "low to high cable crossover upper chest" },
+      { id: "d1e5", name: "Dumbbell Lateral Raises", sets: 4, reps: "15", note: "Crucial for shoulder width.", q: "dumbbell lateral raise correct form" },
+      { id: "d1e6", name: "Tricep Rope Pushdowns", sets: 3, reps: "10–12", note: "Flare ropes at the bottom.", q: "tricep rope pushdown form" },
+    ]
+  },
+  {
+    id: 2, name: "Day 2 · Pull", focus: "Back Width & Biceps",
+    exercises: [
+      { id: "d2e1", name: "Pull-ups (BW or Weighted)", sets: 4, reps: "6–10", note: "Wide overhand grip for lats.", q: "pull up proper form back" },
+      { id: "d2e2", name: "Barbell Bent-Over Rows", sets: 3, reps: "8–10", note: "Hinge ~45°, drive elbows back.", q: "barbell bent over row form" },
+      { id: "d2e3", name: "Lat Pulldowns (Wide Grip)", sets: 3, reps: "10–12", note: "Pull to upper chest.", q: "wide grip lat pulldown form" },
+      { id: "d2e4", name: "Face Pulls", sets: 4, reps: "15", note: "Rear delts & healthy shoulders.", q: "face pull rear delt form" },
+      { id: "d2e5", name: "Incline Dumbbell Curls", sets: 3, reps: "10–12", note: "Hits the long head for peak.", q: "incline dumbbell curl bicep peak" },
+      { id: "d2e6", name: "Hammer Curls", sets: 3, reps: "10–12", note: "Brachialis & forearms.", q: "hammer curl form" },
+    ]
+  },
+  {
+    id: 3, name: "Day 3 · Legs & Core", focus: "Quads, Hamstrings, Core",
+    exercises: [
+      { id: "d3e1", name: "Barbell Back Squats", sets: 4, reps: "6–8", note: "Brace core, hit depth.", q: "barbell back squat form" },
+      { id: "d3e2", name: "Romanian Deadlifts (RDLs)", sets: 3, reps: "8–10", note: "Slight knee bend, push hips back.", q: "romanian deadlift form hamstrings" },
+      { id: "d3e3", name: "Bulgarian Split Squats", sets: 3, reps: "10/leg", note: "Front foot far enough out.", q: "bulgarian split squat form" },
+      { id: "d3e4", name: "Hanging Leg Raises", sets: 4, reps: "to failure", note: "Posterior pelvic tilt at top.", q: "hanging leg raise lower abs" },
+      { id: "d3e5", name: "Cable Crunches", sets: 3, reps: "12–15", note: "Crunch down, don't pull with arms.", q: "cable crunch abs form" },
+    ]
+  },
+  {
+    id: 4, name: "Day 4 · Push", focus: "Shoulders & Triceps",
+    exercises: [
+      { id: "d4e1", name: "Seated Dumbbell Shoulder Press", sets: 4, reps: "8–10", note: "Slight back-tilt of the bench OK.", q: "seated dumbbell shoulder press form" },
+      { id: "d4e2", name: "Flat Barbell Bench Press or Weighted Push-ups", sets: 3, reps: "8–10", note: "Tight upper back, controlled bar path.", q: "flat barbell bench press technique" },
+      { id: "d4e3", name: "Cable Lateral Raises", sets: 4, reps: "12–15", note: "Constant tension on side delts.", q: "cable lateral raise side delt" },
+      { id: "d4e4", name: "Overhead Tricep Extension", sets: 3, reps: "10–12", note: "Long head stretch.", q: "overhead tricep extension form" },
+      { id: "d4e5", name: "Skull Crushers", sets: 3, reps: "10", note: "Elbows tucked, lower to forehead.", q: "skull crusher tricep form" },
+    ]
+  },
+  {
+    id: 5, name: "Day 5 · Pull", focus: "Back Thickness & Biceps",
+    exercises: [
+      { id: "d5e1", name: "Chin-ups (Underhand Grip)", sets: 3, reps: "to failure", note: "Bicep + lower lat emphasis.", q: "chin up underhand grip form" },
+      { id: "d5e2", name: "Seated Cable Rows", sets: 4, reps: "10–12", note: "Squeeze shoulder blades.", q: "seated cable row back thickness" },
+      { id: "d5e3", name: "Straight Arm Pulldowns", sets: 3, reps: "12–15", note: "Isolates the lats.", q: "straight arm pulldown lats" },
+      { id: "d5e4", name: "Reverse Pec Deck", sets: 3, reps: "15", note: "Pull elbows wide and back.", q: "reverse pec deck rear delts" },
+      { id: "d5e5", name: "Barbell Bicep Curls", sets: 4, reps: "8–10", note: "Strict — no swinging.", q: "barbell curl bicep form" },
+      { id: "d5e6", name: "Preacher Curls", sets: 3, reps: "10–12", note: "Bottom-half stretch.", q: "preacher curl form" },
+    ]
+  },
+  {
+    id: 6, name: "Day 6 · Legs & Core", focus: "Posterior chain, Calves, Abs",
+    exercises: [
+      { id: "d6e1", name: "Leg Press", sets: 4, reps: "10–12", note: "Full ROM, don't lock knees.", q: "leg press proper form" },
+      { id: "d6e2", name: "Leg Curls (Seated or Lying)", sets: 3, reps: "12–15", note: "Squeeze hamstrings hard.", q: "hamstring curl form" },
+      { id: "d6e3", name: "Calf Raises (Standing or Seated)", sets: 4, reps: "15–20", note: "Pause at top stretch.", q: "calf raise form" },
+      { id: "d6e4", name: "Ab Wheel Rollouts or Planks", sets: 3, reps: "to failure", note: "Brace core throughout.", q: "ab wheel rollout form" },
+      { id: "d6e5", name: "Decline Sit-ups (Weighted)", sets: 3, reps: "12–15", note: "Hold weight on chest.", q: "decline sit up weighted form" },
+    ]
+  },
+  {
+    id: 7, name: "Day 7 · Rest / Light Cardio", focus: "Recovery",
+    exercises: []
+  }
+];
+
+/* ---------- Storage ---------- */
+const LS_KEY = "ppl-tracker-v1";
+function loadAll() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveAll(data) { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+function getHistory(exId) { const d = loadAll(); return d[exId] || []; }
+function pushHistory(exId, entry) {
+  const d = loadAll(); d[exId] = d[exId] || []; d[exId].push(entry); saveAll(d);
+}
+
+/* ---------- State ---------- */
+let currentDay = (() => {
+  // Map JS day-of-week to plan day. Mon=Day1 ... Sun=Day7
+  const dow = new Date().getDay(); // 0=Sun..6=Sat
+  return dow === 0 ? 7 : dow;
+})();
+let draft = {}; // { exId: [{reps, weight, band}, ...] }
+
+/* ---------- Helpers ---------- */
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) {
+    if (k == null || k === false) continue;
+    e.appendChild(typeof k === "string" ? document.createTextNode(k) : k);
+  }
+  return e;
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.remove("show"), 1600);
+}
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+function ytSearchURL(q) {
+  return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+}
+
+/* ---------- Render ---------- */
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  for (const day of PLAN) {
+    const t = el("button", {
+      class: "tab" + (day.id === currentDay ? " active" : "") + (day.id === 7 ? " rest" : ""),
+      onclick: () => { currentDay = day.id; renderAll(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    }, "Day " + day.id);
+    tabs.appendChild(t);
+  }
+}
+
+function renderDay() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  const day = PLAN.find(d => d.id === currentDay);
+  app.appendChild(
+    el("div", { class: "day-header" },
+      el("h2", {}, day.name),
+      el("div", { class: "sub" }, day.focus)
+    )
+  );
+
+  if (day.id === 7) {
+    app.appendChild(
+      el("div", { class: "card rest-card" },
+        el("h3", {}, "Recovery day"),
+        el("div", {}, "An easy 3–5 km run, brisk walk, mobility, or full rest. Light cardio helps blood flow and recovery — don't add hard lifts here.")
+      )
+    );
+    return;
+  }
+
+  for (const ex of day.exercises) {
+    app.appendChild(renderExercise(ex));
+  }
+}
+
+function renderExercise(ex) {
+  const card = el("div", { class: "card", id: "card-" + ex.id });
+
+  card.appendChild(
+    el("div", { class: "ex-head" },
+      el("div", {},
+        el("div", { class: "ex-name" }, ex.name),
+        el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}`),
+        ex.note ? el("div", { class: "ex-note" }, ex.note) : null
+      ),
+      el("a", { class: "yt-btn", href: ytSearchURL(ex.q), target: "_blank", rel: "noopener" },
+        "▶ Video"
+      )
+    )
+  );
+
+  // Set rows
+  draft[ex.id] = draft[ex.id] || prefillFromLast(ex);
+  card.appendChild(
+    el("div", { class: "set-grid-head" },
+      el("span", {}, "#"),
+      el("span", {}, "Reps"),
+      el("span", {}, "Weight"),
+      el("span", {}, "Band"),
+      el("span", {}, "")
+    )
+  );
+  const list = el("div", { class: "set-list" });
+  for (let i = 0; i < draft[ex.id].length; i++) {
+    list.appendChild(renderSetRow(ex.id, i));
+  }
+  card.appendChild(list);
+
+  // Actions
+  const actions = el("div", { class: "ex-actions" },
+    el("button", {
+      class: "btn",
+      onclick: () => { draft[ex.id].push({ reps: "", weight: "", band: "" }); rerenderEx(ex.id); }
+    }, "+ Add set"),
+    el("button", {
+      class: "btn primary",
+      onclick: () => saveSession(ex.id)
+    }, "Save session"),
+    el("button", {
+      class: "btn ghost",
+      onclick: () => {
+        const h = card.querySelector(".history");
+        h.classList.toggle("open");
+      }
+    }, "History"),
+  );
+  card.appendChild(actions);
+
+  // History
+  card.appendChild(renderHistory(ex.id));
+
+  return card;
+}
+
+function renderSetRow(exId, idx) {
+  const set = draft[exId][idx];
+  const update = (k, v) => { draft[exId][idx][k] = v; };
+  return el("div", { class: "set-row" },
+    el("div", { class: "lbl" }, String(idx + 1)),
+    el("input", { type: "number", inputmode: "numeric", placeholder: "reps", value: set.reps, oninput: e => update("reps", e.target.value) }),
+    el("input", { type: "number", inputmode: "decimal", step: "0.5", placeholder: "kg", value: set.weight, oninput: e => update("weight", e.target.value) }),
+    el("input", { type: "text", placeholder: "band", value: set.band, oninput: e => update("band", e.target.value) }),
+    el("button", { class: "rm", title: "Remove set",
+      onclick: () => { draft[exId].splice(idx, 1); if (!draft[exId].length) draft[exId].push({ reps:"", weight:"", band:"" }); rerenderEx(exId); }
+    }, "×")
+  );
+}
+
+function renderHistory(exId) {
+  const wrap = el("div", { class: "history" });
+  wrap.appendChild(el("h4", {}, "Past sessions"));
+  const hist = getHistory(exId).slice().reverse();
+  if (!hist.length) {
+    wrap.appendChild(el("div", { style: "color:var(--muted);font-size:.85rem" }, "No sessions logged yet."));
+    return wrap;
+  }
+  for (const entry of hist.slice(0, 12)) {
+    const e = el("div", { class: "entry" },
+      el("div", { class: "date" }, fmtDate(entry.date)),
+      el("div", { class: "sets" },
+        ...entry.sets.map((s, i) =>
+          el("span", { class: "pill" },
+            `S${i + 1}: ${s.reps || "—"} reps` +
+            (s.weight ? ` @ ${s.weight}kg` : "") +
+            (s.band ? ` (${s.band})` : "")
+          )
+        )
+      )
+    );
+    wrap.appendChild(e);
+  }
+  return wrap;
+}
+
+function prefillFromLast(ex) {
+  const hist = getHistory(ex.id);
+  if (hist.length) {
+    return hist[hist.length - 1].sets.map(s => ({ reps: s.reps || "", weight: s.weight || "", band: s.band || "" }));
+  }
+  const n = Math.max(1, ex.sets || 3);
+  return Array.from({ length: n }, () => ({ reps: "", weight: "", band: "" }));
+}
+
+function rerenderEx(exId) {
+  const old = document.getElementById("card-" + exId);
+  const day = PLAN.find(d => d.id === currentDay);
+  const ex = day.exercises.find(e => e.id === exId);
+  const fresh = renderExercise(ex);
+  old.replaceWith(fresh);
+}
+
+function saveSession(exId) {
+  const sets = (draft[exId] || []).filter(s => s.reps !== "" || s.weight !== "" || s.band !== "");
+  if (!sets.length) { toast("Nothing to save — fill at least one set."); return; }
+  pushHistory(exId, { date: new Date().toISOString(), sets });
+  toast("Session saved ✓");
+  rerenderEx(exId);
+}
+
+/* ---------- Stats ---------- */
+function openStats() {
+  const body = document.getElementById("statsBody");
+  body.innerHTML = "";
+  for (const day of PLAN) {
+    if (!day.exercises.length) continue;
+    const section = el("div", { style: "margin-bottom:14px" },
+      el("div", { style: "font-weight:600;margin-bottom:6px" }, day.name)
+    );
+    for (const ex of day.exercises) {
+      const hist = getHistory(ex.id);
+      if (!hist.length) continue;
+      // top weight per session, last 8 sessions
+      const series = hist.slice(-8).map(h => {
+        const top = h.sets.reduce((m, s) => Math.max(m, parseFloat(s.weight) || 0), 0);
+        return top;
+      });
+      const max = Math.max(...series, 1);
+      const latest = series[series.length - 1];
+      const chart = el("div", { class: "progress-chart" });
+      chart.appendChild(
+        el("div", { style: "font-size:.85rem;margin-bottom:4px" }, ex.name)
+      );
+      series.forEach((v, i) => {
+        const pct = Math.round((v / max) * 100);
+        chart.appendChild(
+          el("div", { class: "bar-row" },
+            el("div", { class: "lab" }, "Session " + (i + 1)),
+            el("div", { class: "bar" }, el("div", { style: `width:${pct}%` })),
+            el("div", { class: "val" }, v ? v + " kg" : "—")
+          )
+        );
+      });
+      section.appendChild(chart);
+    }
+    if (section.children.length > 1) body.appendChild(section);
+  }
+  if (!body.children.length) {
+    body.appendChild(el("div", { style: "color:var(--muted)" }, "No data yet — log a few sessions first."));
+  }
+  document.getElementById("statsModal").classList.add("open");
+}
+
+/* ---------- Menu / IO ---------- */
+function openMenu() { document.getElementById("menuModal").classList.add("open"); }
+function closeMenu() { document.getElementById("menuModal").classList.remove("open"); }
+
+function exportData() {
+  const data = loadAll();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `ppl-tracker-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  toast("Export started");
+}
+function importData(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      if (typeof data !== "object" || Array.isArray(data)) throw new Error("bad json");
+      // merge
+      const cur = loadAll();
+      for (const k of Object.keys(data)) {
+        cur[k] = (cur[k] || []).concat(data[k] || []);
+      }
+      saveAll(cur);
+      toast("Import complete");
+      renderAll();
+    } catch (e) { toast("Import failed: invalid file"); }
+  };
+  r.readAsText(file);
+}
+function resetData() {
+  if (!confirm("Erase ALL logged sessions? This cannot be undone.")) return;
+  localStorage.removeItem(LS_KEY);
+  draft = {};
+  toast("All data cleared");
+  renderAll();
+}
+
+/* ---------- Boot ---------- */
+function renderAll() { renderTabs(); renderDay(); }
+function setTodayTag() {
+  const dow = new Date().toLocaleDateString(undefined, { weekday: "short" });
+  document.getElementById("todayTag").textContent = "· " + dow;
+}
+window.addEventListener("DOMContentLoaded", () => {
+  setTodayTag();
+  renderAll();
+
+  document.getElementById("menuBtn").addEventListener("click", openMenu);
+  document.getElementById("closeMenu").addEventListener("click", closeMenu);
+  document.getElementById("exportBtn").addEventListener("click", exportData);
+  document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+  document.getElementById("importFile").addEventListener("change", e => { if (e.target.files[0]) importData(e.target.files[0]); });
+  document.getElementById("clearBtn").addEventListener("click", resetData);
+
+  document.getElementById("statsBtn").addEventListener("click", openStats);
+  document.getElementById("closeStats").addEventListener("click", () => document.getElementById("statsModal").classList.remove("open"));
+
+  // close modal on background click
+  for (const id of ["menuModal", "statsModal"]) {
+    document.getElementById(id).addEventListener("click", e => {
+      if (e.target.id === id) e.currentTarget.classList.remove("open");
+    });
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
