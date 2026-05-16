@@ -1,4 +1,4 @@
-const CACHE = "ppl-tracker-v2";
+const CACHE = "ppl-tracker-v3";
 const ASSETS = [
   "./",
   "./index.html",

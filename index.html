@@ -102,33 +102,45 @@
   }
   .set-row .rm:hover { color: var(--danger); }
 
-  .stepper {
-    display: flex; align-items: stretch; height: 42px;
+  .wheel {
+    position: relative;
+    height: 68px;
     background: var(--bg-3); border: 1px solid var(--line);
-    border-radius: 10px; overflow: hidden;
-    touch-action: manipulation;
-  }
-  .stepper .stp {
-    flex: 0 0 30px; width: 30px;
-    background: transparent; color: var(--text);
-    border: none; padding: 0; cursor: pointer;
-    font-size: 1.15rem; font-weight: 700; line-height: 1;
-    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px;
     user-select: none; -webkit-user-select: none;
+    touch-action: none;
+    overflow: hidden;
+    cursor: ns-resize;
+    transition: border-color .12s, background .12s;
   }
-  .stepper .stp:active, .stepper .stp.repeating { background: var(--bg-2); color: var(--accent); }
-  .stepper .stp.minus { border-right: 1px solid var(--line); }
-  .stepper .stp.plus  { border-left:  1px solid var(--line); }
-  .stepper input {
-    flex: 1 1 0; width: 0; min-width: 0;
-    text-align: center; border: none; border-radius: 0;
-    background: transparent; padding: 0 2px;
-    font-weight: 600; font-size: .95rem;
-    -moz-appearance: textfield;
+  .wheel:focus { outline: none; border-color: var(--accent); }
+  .wheel.dragging {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(79,140,255,.10), rgba(124,92,255,.10));
   }
-  .stepper input::-webkit-outer-spin-button,
-  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .stepper input:focus { background: rgba(79,140,255,.10); outline: none; }
+  .wheel.dragging .cur { color: var(--accent); }
+  .wheel .prev, .wheel .next {
+    font-size: .72rem; color: var(--muted); opacity: .55;
+    line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .wheel .cur {
+    font-size: 1.05rem; font-weight: 700;
+    line-height: 1.15; font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    padding: 0 4px;
+  }
+  .wheel .cur.ph { color: var(--muted); font-weight: 500; font-size: .9rem; }
+  .wheel::before, .wheel::after {
+    content: ""; position: absolute; left: 8px; right: 8px;
+    height: 1px; background: var(--line); opacity: .5; pointer-events: none;
+  }
+  .wheel::before { top: 18px; }
+  .wheel::after  { bottom: 18px; }
 
   .set-grid-head {
     display: grid; grid-template-columns: 20px 1fr 1fr 1.15fr 22px;
@@ -206,8 +218,9 @@
 
   @media (max-width: 380px) {
     .set-row, .set-grid-head { grid-template-columns: 18px 1fr 1fr 1.15fr 20px; gap: 3px; }
-    .stepper .stp { flex-basis: 26px; width: 26px; font-size: 1.05rem; }
-    .stepper input { font-size: .9rem; }
+    .wheel { height: 62px; }
+    .wheel .cur { font-size: .98rem; }
+    .wheel .prev, .wheel .next { font-size: .66rem; }
   }
 </style>
 </head>
@@ -481,66 +494,131 @@ function renderExercise(ex) {
 
 const BAND_PRESETS = ["", "Light", "Medium", "Heavy", "X-Heavy"];
 
-function attachHoldRepeat(btn, fn) {
-  let delayT, repT;
-  const stop = () => {
-    clearTimeout(delayT); clearInterval(repT);
-    delayT = repT = null;
-    btn.classList.remove("repeating");
-  };
-  const start = (e) => {
-    e.preventDefault(); btn.focus({ preventScroll: true });
-    fn();
-    delayT = setTimeout(() => {
-      btn.classList.add("repeating");
-      repT = setInterval(fn, 90);
-    }, 380);
-  };
-  btn.addEventListener("pointerdown", start);
-  btn.addEventListener("pointerup", stop);
-  btn.addEventListener("pointerleave", stop);
-  btn.addEventListener("pointercancel", stop);
-  // keyboard accessibility
-  btn.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fn(); }
-  });
-}
+function makeWheel({ type, value, step, placeholder, onChange }) {
+  let val = value == null ? "" : String(value);
+  const stepNum = parseFloat(step) || 1;
+  const isInt = Number.isInteger(stepNum);
 
-function makeStepper({ type, value, step, placeholder, onChange }) {
-  const inp = el("input", {
-    type: type === "band" ? "text" : "number",
-    inputmode: type === "weight" ? "decimal" : (type === "reps" ? "numeric" : "text"),
-    placeholder, value: value || ""
-  });
-  if (type === "weight") inp.step = step || "2.5";
-  inp.addEventListener("input", e => onChange(e.target.value));
-  inp.addEventListener("focus", () => inp.select());
+  const fmt = n => {
+    if (n < 0) n = 0;
+    if (isInt) return String(Math.round(n));
+    return String(+n.toFixed(2)).replace(/\.?0+$/, "");
+  };
 
-  function bump(dir) {
-    if (type === "band") {
-      const cur = (inp.value || "").trim();
-      const idx = BAND_PRESETS.indexOf(cur);
-      let next;
-      if (idx === -1) next = dir > 0 ? 1 : BAND_PRESETS.length - 1;
-      else next = (idx + dir + BAND_PRESETS.length) % BAND_PRESETS.length;
-      inp.value = BAND_PRESETS[next];
-    } else {
-      const s = parseFloat(step) || 1;
-      const cur = parseFloat(inp.value);
-      const base = isNaN(cur) ? 0 : cur;
-      let next = base + dir * s;
-      if (next < 0) next = 0;
-      inp.value = Number.isInteger(s) ? String(Math.round(next)) : String(+next.toFixed(2));
+  const prevEl = el("div", { class: "prev" }, "");
+  const curEl  = el("div", { class: "cur" }, "");
+  const nextEl = el("div", { class: "next" }, "");
+
+  const wrap = el("div", {
+    class: "wheel",
+    role: "spinbutton",
+    tabindex: "0",
+    "aria-label": type
+  }, prevEl, curEl, nextEl);
+
+  function render() {
+    if (val === "" || val == null) {
+      curEl.textContent = placeholder || "—";
+      curEl.classList.add("ph");
+      prevEl.textContent = "";
+      nextEl.textContent = "";
+      wrap.setAttribute("aria-valuetext", "empty");
+      return;
     }
-    onChange(inp.value);
+    curEl.classList.remove("ph");
+    curEl.textContent = val;
+    if (type === "band") {
+      const len = BAND_PRESETS.length;
+      const idx = BAND_PRESETS.indexOf(val);
+      const i = idx === -1 ? 0 : idx;
+      prevEl.textContent = BAND_PRESETS[(i - 1 + len) % len] || "—";
+      nextEl.textContent = BAND_PRESETS[(i + 1) % len] || "—";
+    } else {
+      const cur = parseFloat(val);
+      if (isNaN(cur)) { prevEl.textContent = ""; nextEl.textContent = ""; }
+      else {
+        prevEl.textContent = cur - stepNum >= 0 ? fmt(cur - stepNum) : "";
+        nextEl.textContent = fmt(cur + stepNum);
+      }
+    }
+    wrap.setAttribute("aria-valuetext", val);
+  }
+  function setVal(v) { val = v; render(); }
+
+  let dragging = false, startY = 0, startNum = 0, startIdx = 0, moved = 0;
+  const TICK_PX = 20;
+
+  function captureStart() {
+    if (type === "band") {
+      startIdx = BAND_PRESETS.indexOf(val);
+      if (startIdx === -1) startIdx = 0;
+    } else {
+      const n = parseFloat(val);
+      startNum = isNaN(n) ? 0 : n;
+    }
+  }
+  function applyDelta(steps) {
+    if (type === "band") {
+      const len = BAND_PRESETS.length;
+      const next = ((startIdx + steps) % len + len) % len;
+      setVal(BAND_PRESETS[next]);
+    } else {
+      setVal(fmt(startNum + steps * stepNum));
+    }
   }
 
-  const minus = el("button", { class: "stp minus", type: "button", "aria-label": "decrease" }, "−");
-  const plus  = el("button", { class: "stp plus",  type: "button", "aria-label": "increase" }, "+");
-  attachHoldRepeat(minus, () => bump(-1));
-  attachHoldRepeat(plus,  () => bump(+1));
+  wrap.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    wrap.focus({ preventScroll: true });
+    dragging = true;
+    startY = e.clientY;
+    moved = 0;
+    captureStart();
+    wrap.classList.add("dragging");
+    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  wrap.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    moved = Math.max(moved, Math.abs(dy));
+    applyDelta(-Math.round(dy / TICK_PX));
+  });
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    wrap.classList.remove("dragging");
+    onChange(val);
+    // If the user barely moved, treat as a tap → open quick entry
+    if (moved < 4) promptEntry();
+  }
+  wrap.addEventListener("pointerup", endDrag);
+  wrap.addEventListener("pointercancel", endDrag);
 
-  return el("div", { class: "stepper" }, minus, inp, plus);
+  function promptEntry() {
+    const label = type === "band" ? "Band (Light/Medium/Heavy/X-Heavy)" : (type === "weight" ? "Weight (kg)" : "Reps");
+    const v = window.prompt(label, val);
+    if (v == null) return;
+    const t = v.trim();
+    if (type === "band") setVal(t);
+    else {
+      const n = parseFloat(t);
+      setVal(t === "" || isNaN(n) ? "" : fmt(n));
+    }
+    onChange(val);
+  }
+
+  wrap.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault(); captureStart();
+      applyDelta(e.key === "ArrowUp" ? 1 : -1);
+      onChange(val);
+    } else if (e.key === "Enter") {
+      e.preventDefault(); promptEntry();
+    }
+  });
+
+  render();
+  return wrap;
 }
 
 function renderSetRow(exId, idx) {
@@ -548,9 +626,9 @@ function renderSetRow(exId, idx) {
   const update = (k, v) => { draft[exId][idx][k] = v; };
   return el("div", { class: "set-row" },
     el("div", { class: "lbl" }, String(idx + 1)),
-    makeStepper({ type: "reps",   step: "1",   placeholder: "reps", value: set.reps,   onChange: v => update("reps", v) }),
-    makeStepper({ type: "weight", step: "2.5", placeholder: "kg",   value: set.weight, onChange: v => update("weight", v) }),
-    makeStepper({ type: "band",                 placeholder: "band", value: set.band,   onChange: v => update("band", v) }),
+    makeWheel({ type: "reps",   step: "1",   placeholder: "reps", value: set.reps,   onChange: v => update("reps", v) }),
+    makeWheel({ type: "weight", step: "2.5", placeholder: "kg",   value: set.weight, onChange: v => update("weight", v) }),
+    makeWheel({ type: "band",                 placeholder: "band", value: set.band,   onChange: v => update("band", v) }),
     el("button", { class: "rm", title: "Remove set",
       onclick: () => { draft[exId].splice(idx, 1); if (!draft[exId].length) draft[exId].push({ reps:"", weight:"", band:"" }); rerenderEx(exId); }
     }, "×")
