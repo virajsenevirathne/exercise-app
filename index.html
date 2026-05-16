@@ -104,43 +104,112 @@
 
   .wheel {
     position: relative;
-    height: 68px;
+    height: 64px;
     background: var(--bg-3); border: 1px solid var(--line);
     border-radius: 12px;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 2px;
     user-select: none; -webkit-user-select: none;
-    touch-action: none;
     overflow: hidden;
-    cursor: ns-resize;
-    transition: border-color .12s, background .12s;
+    cursor: pointer;
+    transition: transform .15s cubic-bezier(.2,.8,.2,1), border-color .15s, box-shadow .15s;
   }
-  .wheel:focus { outline: none; border-color: var(--accent); }
-  .wheel.dragging {
-    border-color: var(--accent);
-    background: linear-gradient(180deg, rgba(79,140,255,.10), rgba(124,92,255,.10));
+  .wheel:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,140,255,.25); }
+  .wheel:active { transform: scale(.97); }
+  .wheel.pop { animation: wheelPop .32s cubic-bezier(.2,.9,.25,1.1); }
+  @keyframes wheelPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.07); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,140,255,.18); }
+    100% { transform: scale(1); }
   }
-  .wheel.dragging .cur { color: var(--accent); }
   .wheel .prev, .wheel .next {
-    font-size: .72rem; color: var(--muted); opacity: .55;
+    font-size: .68rem; color: var(--muted); opacity: .45;
     line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none;
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .wheel .cur {
-    font-size: 1.05rem; font-weight: 700;
+    font-size: 1.1rem; font-weight: 700;
     line-height: 1.15; font-variant-numeric: tabular-nums;
     pointer-events: none;
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     padding: 0 4px;
   }
   .wheel .cur.ph { color: var(--muted); font-weight: 500; font-size: .9rem; }
-  .wheel::before, .wheel::after {
-    content: ""; position: absolute; left: 8px; right: 8px;
-    height: 1px; background: var(--line); opacity: .5; pointer-events: none;
+
+  /* ---------- Bottom-sheet wheel picker ---------- */
+  .sheet-bg {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0); display: none;
+    align-items: flex-end; justify-content: center;
+    transition: background .22s ease;
   }
-  .wheel::before { top: 18px; }
-  .wheel::after  { bottom: 18px; }
+  .sheet-bg.open { display: flex; background: rgba(0,0,0,.55); }
+  .sheet {
+    width: 100%; max-width: 480px;
+    background: var(--bg-2);
+    border-top-left-radius: 22px; border-top-right-radius: 22px;
+    border: 1px solid var(--line); border-bottom: none;
+    box-shadow: 0 -16px 40px rgba(0,0,0,.5);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform .32s cubic-bezier(.2,.9,.2,1);
+    will-change: transform;
+  }
+  .sheet-bg.open .sheet { transform: translateY(0); }
+  .sheet-handle {
+    width: 42px; height: 4px; background: var(--line);
+    border-radius: 999px; margin: 8px auto 0;
+  }
+  .sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 8px; gap: 8px;
+  }
+  .sheet-title { font-weight: 700; font-size: 1.05rem; letter-spacing: .4px; }
+  .sheet-act {
+    background: transparent; border: none; color: var(--accent);
+    font: inherit; padding: 10px 14px; cursor: pointer; border-radius: 10px;
+    min-width: 70px;
+  }
+  .sheet-act.done { color: var(--accent); font-weight: 700; }
+  .sheet-act:active { background: var(--bg-3); }
+
+  .picker { position: relative; height: 220px; overflow: hidden; }
+  .picker-track {
+    height: 100%;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 90px 0; /* (picker height/2 - itemH/2) = 110 - 20 = 90 */
+  }
+  .picker-track::-webkit-scrollbar { display: none; }
+  .pick {
+    height: 40px; line-height: 40px; text-align: center;
+    font-size: 1.25rem; font-weight: 600;
+    scroll-snap-align: center;
+    transition: transform .18s cubic-bezier(.2,.8,.2,1), opacity .18s, color .18s;
+    font-variant-numeric: tabular-nums;
+    opacity: .25; color: var(--muted);
+  }
+  .pick.n2 { opacity: .35; }
+  .pick.n1 { opacity: .6; transform: scale(1.02); }
+  .pick.center { opacity: 1; color: var(--text); transform: scale(1.18); font-weight: 700; }
+  .picker .center-band {
+    position: absolute; left: 14px; right: 14px;
+    top: 50%; transform: translateY(-50%); height: 44px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(90deg, rgba(79,140,255,.06), rgba(124,92,255,.06));
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .picker::before, .picker::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 70px;
+    pointer-events: none; z-index: 2;
+  }
+  .picker::before { top: 0;    background: linear-gradient(180deg, var(--bg-2), transparent); }
+  .picker::after  { bottom: 0; background: linear-gradient(0deg,   var(--bg-2), transparent); }
 
   .set-grid-head {
     display: grid; grid-template-columns: 20px 1fr 1fr 1.15fr 22px;
@@ -218,9 +287,9 @@
 
   @media (max-width: 380px) {
     .set-row, .set-grid-head { grid-template-columns: 18px 1fr 1fr 1.15fr 20px; gap: 3px; }
-    .wheel { height: 62px; }
-    .wheel .cur { font-size: .98rem; }
-    .wheel .prev, .wheel .next { font-size: .66rem; }
+    .wheel { height: 60px; }
+    .wheel .cur { font-size: 1rem; }
+    .wheel .prev, .wheel .next { font-size: .64rem; }
   }
 </style>
 </head>
@@ -494,6 +563,16 @@ function renderExercise(ex) {
 
 const BAND_PRESETS = ["", "Light", "Medium", "Heavy", "X-Heavy"];
 
+const WHEEL_LABELS = {
+  reps:   { title: "Reps",        unit: "" },
+  weight: { title: "Weight (kg)", unit: "kg" },
+  band:   { title: "Resistance Band", unit: "" }
+};
+
+function vibrate(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
+}
+
 function makeWheel({ type, value, step, placeholder, onChange }) {
   let val = value == null ? "" : String(value);
   const stepNum = parseFloat(step) || 1;
@@ -505,15 +584,13 @@ function makeWheel({ type, value, step, placeholder, onChange }) {
     return String(+n.toFixed(2)).replace(/\.?0+$/, "");
   };
 
-  const prevEl = el("div", { class: "prev" }, "");
-  const curEl  = el("div", { class: "cur" }, "");
-  const nextEl = el("div", { class: "next" }, "");
-
+  const prevEl = el("div", { class: "prev" });
+  const curEl  = el("div", { class: "cur" });
+  const nextEl = el("div", { class: "next" });
+  const titleForA11y = (WHEEL_LABELS[type] && WHEEL_LABELS[type].title) || type;
   const wrap = el("div", {
-    class: "wheel",
-    role: "spinbutton",
-    tabindex: "0",
-    "aria-label": type
+    class: "wheel", role: "button", tabindex: "0",
+    "aria-label": titleForA11y + " picker"
   }, prevEl, curEl, nextEl);
 
   function render() {
@@ -522,103 +599,173 @@ function makeWheel({ type, value, step, placeholder, onChange }) {
       curEl.classList.add("ph");
       prevEl.textContent = "";
       nextEl.textContent = "";
-      wrap.setAttribute("aria-valuetext", "empty");
       return;
     }
     curEl.classList.remove("ph");
     curEl.textContent = val;
     if (type === "band") {
       const len = BAND_PRESETS.length;
-      const idx = BAND_PRESETS.indexOf(val);
-      const i = idx === -1 ? 0 : idx;
+      const i = Math.max(0, BAND_PRESETS.indexOf(val));
       prevEl.textContent = BAND_PRESETS[(i - 1 + len) % len] || "—";
       nextEl.textContent = BAND_PRESETS[(i + 1) % len] || "—";
     } else {
-      const cur = parseFloat(val);
-      if (isNaN(cur)) { prevEl.textContent = ""; nextEl.textContent = ""; }
+      const n = parseFloat(val);
+      if (isNaN(n)) { prevEl.textContent = ""; nextEl.textContent = ""; }
       else {
-        prevEl.textContent = cur - stepNum >= 0 ? fmt(cur - stepNum) : "";
-        nextEl.textContent = fmt(cur + stepNum);
+        prevEl.textContent = n - stepNum >= 0 ? fmt(n - stepNum) : "";
+        nextEl.textContent = fmt(n + stepNum);
       }
     }
-    wrap.setAttribute("aria-valuetext", val);
-  }
-  function setVal(v) { val = v; render(); }
-
-  let dragging = false, startY = 0, startNum = 0, startIdx = 0, moved = 0;
-  const TICK_PX = 20;
-
-  function captureStart() {
-    if (type === "band") {
-      startIdx = BAND_PRESETS.indexOf(val);
-      if (startIdx === -1) startIdx = 0;
-    } else {
-      const n = parseFloat(val);
-      startNum = isNaN(n) ? 0 : n;
-    }
-  }
-  function applyDelta(steps) {
-    if (type === "band") {
-      const len = BAND_PRESETS.length;
-      const next = ((startIdx + steps) % len + len) % len;
-      setVal(BAND_PRESETS[next]);
-    } else {
-      setVal(fmt(startNum + steps * stepNum));
-    }
   }
 
-  wrap.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    wrap.focus({ preventScroll: true });
-    dragging = true;
-    startY = e.clientY;
-    moved = 0;
-    captureStart();
-    wrap.classList.add("dragging");
-    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
-  });
-  wrap.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    const dy = e.clientY - startY;
-    moved = Math.max(moved, Math.abs(dy));
-    applyDelta(-Math.round(dy / TICK_PX));
-  });
-  function endDrag() {
-    if (!dragging) return;
-    dragging = false;
-    wrap.classList.remove("dragging");
-    onChange(val);
-    // If the user barely moved, treat as a tap → open quick entry
-    if (moved < 4) promptEntry();
-  }
-  wrap.addEventListener("pointerup", endDrag);
-  wrap.addEventListener("pointercancel", endDrag);
-
-  function promptEntry() {
-    const label = type === "band" ? "Band (Light/Medium/Heavy/X-Heavy)" : (type === "weight" ? "Weight (kg)" : "Reps");
-    const v = window.prompt(label, val);
-    if (v == null) return;
-    const t = v.trim();
-    if (type === "band") setVal(t);
-    else {
-      const n = parseFloat(t);
-      setVal(t === "" || isNaN(n) ? "" : fmt(n));
-    }
-    onChange(val);
+  function open() {
+    wrap.classList.remove("pop");
+    void wrap.offsetWidth;
+    wrap.classList.add("pop");
+    vibrate(8);
+    openWheelPicker({
+      type, value: val, step: stepNum,
+      onConfirm: v => { val = v; render(); onChange(v); }
+    });
   }
 
+  wrap.addEventListener("click", open);
   wrap.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      e.preventDefault(); captureStart();
-      applyDelta(e.key === "ArrowUp" ? 1 : -1);
-      onChange(val);
-    } else if (e.key === "Enter") {
-      e.preventDefault(); promptEntry();
-    }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
   });
 
   render();
   return wrap;
+}
+
+/* ---------- Modal wheel picker ---------- */
+function openWheelPicker({ type, value, step, onConfirm }) {
+  const stepNum = parseFloat(step) || 1;
+  const isInt = Number.isInteger(stepNum);
+  const fmt = n => {
+    if (n < 0) n = 0;
+    if (isInt) return String(Math.round(n));
+    return String(+n.toFixed(2)).replace(/\.?0+$/, "");
+  };
+
+  // Build value list
+  let items, initialIdx;
+  if (type === "band") {
+    items = BAND_PRESETS.slice();
+    initialIdx = items.indexOf(value || "");
+    if (initialIdx < 0) initialIdx = 0;
+  } else {
+    const max = type === "weight" ? 300 : 100;
+    items = [];
+    for (let n = 0; n <= max + 1e-9; n += stepNum) items.push(fmt(n));
+    const cur = parseFloat(value);
+    if (isNaN(cur)) initialIdx = type === "weight" ? Math.round(20 / stepNum) : 8;
+    else {
+      initialIdx = Math.round(cur / stepNum);
+      if (initialIdx < 0) initialIdx = 0;
+      if (initialIdx >= items.length) initialIdx = items.length - 1;
+    }
+  }
+
+  const title = (WHEEL_LABELS[type] && WHEEL_LABELS[type].title) || type;
+
+  let confirmed = false;
+  let onScrollEnd;
+
+  const bg = el("div", { class: "sheet-bg" });
+  const sheet = el("div", { class: "sheet" });
+  const handle = el("div", { class: "sheet-handle" });
+  const head = el("div", { class: "sheet-head" },
+    el("button", { class: "sheet-act cancel", type: "button", onclick: () => close(false) }, "Cancel"),
+    el("div", { class: "sheet-title" }, title),
+    el("button", { class: "sheet-act done",   type: "button", onclick: () => close(true) }, "Done")
+  );
+
+  const picker = el("div", { class: "picker" });
+  const centerBand = el("div", { class: "center-band" });
+  const track = el("div", { class: "picker-track" });
+  for (const v of items) {
+    track.appendChild(el("div", { class: "pick", "data-v": v }, v === "" ? "—" : v));
+  }
+  picker.appendChild(centerBand);
+  picker.appendChild(track);
+
+  sheet.appendChild(handle);
+  sheet.appendChild(head);
+  sheet.appendChild(picker);
+  bg.appendChild(sheet);
+  document.body.appendChild(bg);
+  document.body.style.overflow = "hidden";
+
+  const ITEM_H = 40;
+  let lastCenter = -1;
+
+  function updateCenter() {
+    const ci = Math.round(track.scrollTop / ITEM_H);
+    if (ci !== lastCenter) {
+      vibrate(4);
+      lastCenter = ci;
+    }
+    const kids = track.children;
+    for (let i = 0; i < kids.length; i++) {
+      const k = kids[i];
+      const d = Math.abs(i - ci);
+      k.className = "pick" + (d === 0 ? " center" : d === 1 ? " n1" : d === 2 ? " n2" : "");
+    }
+  }
+
+  let scrollRAF = false;
+  track.addEventListener("scroll", () => {
+    if (scrollRAF) return;
+    scrollRAF = true;
+    requestAnimationFrame(() => { updateCenter(); scrollRAF = false; });
+  });
+
+  // Tap on an item snaps to it
+  track.addEventListener("click", e => {
+    const t = e.target.closest(".pick");
+    if (!t) return;
+    const i = Array.prototype.indexOf.call(track.children, t);
+    if (i < 0) return;
+    track.scrollTo({ top: i * ITEM_H, behavior: "smooth" });
+  });
+
+  // Dim background closes (cancel)
+  bg.addEventListener("click", e => { if (e.target === bg) close(false); });
+
+  function onKey(e) {
+    if (e.key === "Escape") close(false);
+    else if (e.key === "Enter") close(true);
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const ci = Math.round(track.scrollTop / ITEM_H);
+      const next = Math.max(0, Math.min(items.length - 1, ci + (e.key === "ArrowUp" ? -1 : 1)));
+      track.scrollTo({ top: next * ITEM_H, behavior: "smooth" });
+    }
+  }
+  document.addEventListener("keydown", onKey);
+
+  function close(commit) {
+    if (confirmed) return;
+    confirmed = true;
+    if (commit) {
+      const idx = Math.max(0, Math.min(items.length - 1, Math.round(track.scrollTop / ITEM_H)));
+      vibrate(12);
+      onConfirm(items[idx]);
+    }
+    document.removeEventListener("keydown", onKey);
+    bg.classList.remove("open");
+    document.body.style.overflow = "";
+    setTimeout(() => bg.remove(), 320);
+  }
+
+  // Animate in, then set initial scroll
+  requestAnimationFrame(() => {
+    bg.classList.add("open");
+    // Set initial scroll without smooth so it's instant on open
+    track.scrollTop = initialIdx * ITEM_H;
+    updateCenter();
+  });
 }
 
 function renderSetRow(exId, idx) {
