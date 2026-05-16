@@ -90,21 +90,49 @@
   }
   .yt-btn:active { transform: scale(.97); }
 
-  .set-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .set-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
   .set-row {
-    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
-    gap: 6px; align-items: center;
+    display: grid; grid-template-columns: 20px 1fr 1fr 1.15fr 22px;
+    gap: 4px; align-items: center;
   }
   .set-row .lbl { color: var(--muted); font-size: .82rem; text-align: center; }
-  .set-row input { width: 100%; min-width: 0; padding: 6px 8px; }
   .set-row .rm {
-    background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 1.1rem;
+    background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 1.2rem;
+    padding: 0;
   }
   .set-row .rm:hover { color: var(--danger); }
 
+  .stepper {
+    display: flex; align-items: stretch; height: 42px;
+    background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+    touch-action: manipulation;
+  }
+  .stepper .stp {
+    flex: 0 0 30px; width: 30px;
+    background: transparent; color: var(--text);
+    border: none; padding: 0; cursor: pointer;
+    font-size: 1.15rem; font-weight: 700; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
+  }
+  .stepper .stp:active, .stepper .stp.repeating { background: var(--bg-2); color: var(--accent); }
+  .stepper .stp.minus { border-right: 1px solid var(--line); }
+  .stepper .stp.plus  { border-left:  1px solid var(--line); }
+  .stepper input {
+    flex: 1 1 0; width: 0; min-width: 0;
+    text-align: center; border: none; border-radius: 0;
+    background: transparent; padding: 0 2px;
+    font-weight: 600; font-size: .95rem;
+    -moz-appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input:focus { background: rgba(79,140,255,.10); outline: none; }
+
   .set-grid-head {
-    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
-    gap: 6px; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px;
+    display: grid; grid-template-columns: 20px 1fr 1fr 1.15fr 22px;
+    gap: 4px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
     margin-top: 8px;
   }
   .set-grid-head span { text-align: center; }
@@ -177,8 +205,9 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
   @media (max-width: 380px) {
-    .set-row, .set-grid-head { grid-template-columns: 24px 1fr 1fr 1fr 24px; }
-    input[type=number] { width: 100%; }
+    .set-row, .set-grid-head { grid-template-columns: 18px 1fr 1fr 1.15fr 20px; gap: 3px; }
+    .stepper .stp { flex-basis: 26px; width: 26px; font-size: 1.05rem; }
+    .stepper input { font-size: .9rem; }
   }
 </style>
 </head>
@@ -450,14 +479,78 @@ function renderExercise(ex) {
   return card;
 }
 
+const BAND_PRESETS = ["", "Light", "Medium", "Heavy", "X-Heavy"];
+
+function attachHoldRepeat(btn, fn) {
+  let delayT, repT;
+  const stop = () => {
+    clearTimeout(delayT); clearInterval(repT);
+    delayT = repT = null;
+    btn.classList.remove("repeating");
+  };
+  const start = (e) => {
+    e.preventDefault(); btn.focus({ preventScroll: true });
+    fn();
+    delayT = setTimeout(() => {
+      btn.classList.add("repeating");
+      repT = setInterval(fn, 90);
+    }, 380);
+  };
+  btn.addEventListener("pointerdown", start);
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointerleave", stop);
+  btn.addEventListener("pointercancel", stop);
+  // keyboard accessibility
+  btn.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fn(); }
+  });
+}
+
+function makeStepper({ type, value, step, placeholder, onChange }) {
+  const inp = el("input", {
+    type: type === "band" ? "text" : "number",
+    inputmode: type === "weight" ? "decimal" : (type === "reps" ? "numeric" : "text"),
+    placeholder, value: value || ""
+  });
+  if (type === "weight") inp.step = step || "2.5";
+  inp.addEventListener("input", e => onChange(e.target.value));
+  inp.addEventListener("focus", () => inp.select());
+
+  function bump(dir) {
+    if (type === "band") {
+      const cur = (inp.value || "").trim();
+      const idx = BAND_PRESETS.indexOf(cur);
+      let next;
+      if (idx === -1) next = dir > 0 ? 1 : BAND_PRESETS.length - 1;
+      else next = (idx + dir + BAND_PRESETS.length) % BAND_PRESETS.length;
+      inp.value = BAND_PRESETS[next];
+    } else {
+      const s = parseFloat(step) || 1;
+      const cur = parseFloat(inp.value);
+      const base = isNaN(cur) ? 0 : cur;
+      let next = base + dir * s;
+      if (next < 0) next = 0;
+      inp.value = Number.isInteger(s) ? String(Math.round(next)) : String(+next.toFixed(2));
+    }
+    onChange(inp.value);
+  }
+
+  const minus = el("button", { class: "stp minus", type: "button", "aria-label": "decrease" }, "−");
+  const plus  = el("button", { class: "stp plus",  type: "button", "aria-label": "increase" }, "+");
+  attachHoldRepeat(minus, () => bump(-1));
+  attachHoldRepeat(plus,  () => bump(+1));
+
+  return el("div", { class: "stepper" }, minus, inp, plus);
+}
+
 function renderSetRow(exId, idx) {
   const set = draft[exId][idx];
   const update = (k, v) => { draft[exId][idx][k] = v; };
   return el("div", { class: "set-row" },
     el("div", { class: "lbl" }, String(idx + 1)),
-    el("input", { type: "number", inputmode: "numeric", placeholder: "reps", value: set.reps, oninput: e => update("reps", e.target.value) }),
-    el("input", { type: "number", inputmode: "decimal", step: "0.5", placeholder: "kg", value: set.weight, oninput: e => update("weight", e.target.value) }),
-    el("input", { type: "text", placeholder: "band", value: set.band, oninput: e => update("band", e.target.value) }),
+    makeStepper({ type: "reps",   step: "1",   placeholder: "reps", value: set.reps,   onChange: v => update("reps", v) }),
+    makeStepper({ type: "weight", step: "2.5", placeholder: "kg",   value: set.weight, onChange: v => update("weight", v) }),
+    makeStepper({ type: "band",                 placeholder: "band", value: set.band,   onChange: v => update("band", v) }),
     el("button", { class: "rm", title: "Remove set",
       onclick: () => { draft[exId].splice(idx, 1); if (!draft[exId].length) draft[exId].push({ reps:"", weight:"", band:"" }); rerenderEx(exId); }
     }, "×")
