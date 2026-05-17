@@ -176,9 +176,108 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
+  /* Last-session hint */
+  .last-hint {
+    color: var(--muted); font-size: .8rem; margin-top: 8px;
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .last-hint .lh-label { color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-size: .7rem; }
+  .last-hint .lh-sets { color: var(--text); font-variant-numeric: tabular-nums; }
+  .last-hint .lh-ago { color: var(--muted); margin-left: auto; font-size: .75rem; }
+
+  /* PR badge */
+  .pr-badge {
+    display: inline-block; margin-left: 6px;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: #1a0f00; font-size: .68rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 999px; vertical-align: middle;
+    letter-spacing: .3px;
+  }
+
+  /* Set completion */
+  .set-row .num-btn {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--muted); cursor: pointer; padding: 5px 0; font-size: .82rem;
+    font-variant-numeric: tabular-nums; font-weight: 600;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .set-row.done .num-btn { background: var(--good); border-color: var(--good); color: #042018; }
+  .set-row.done input { background: rgba(52, 211, 153, .07); border-color: rgba(52, 211, 153, .3); }
+
+  /* Session note */
+  .session-note {
+    width: 100%; margin-top: 10px; resize: vertical; min-height: 36px;
+    background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .9rem;
+  }
+  .session-note:focus { border-color: var(--accent); outline: none; }
+
+  /* Volume tag */
+  .vol-tag {
+    display: inline-block; color: var(--muted); font-size: .78rem;
+    background: var(--bg-3); border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 999px; margin-left: 8px;
+  }
+  .vol-tag b { color: var(--text); font-weight: 600; }
+
+  /* Rest timer floating panel */
+  .rest-timer {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 14px; padding: 10px 14px; box-shadow: var(--shadow);
+    z-index: 150; display: none; align-items: center; gap: 12px;
+    min-width: 260px; max-width: calc(100vw - 24px);
+  }
+  .rest-timer.show { display: flex; }
+  .rest-timer.done { border-color: var(--good); box-shadow: 0 8px 24px rgba(52, 211, 153, .35); }
+  .rest-timer .time {
+    font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    min-width: 70px; text-align: center; letter-spacing: -.5px;
+  }
+  .rest-timer.done .time { color: var(--good); }
+  .rest-timer .lbl { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; }
+  .rest-timer button {
+    background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: .85rem;
+  }
+  .rest-timer button:active { transform: scale(.95); }
+
+  /* Session summary header */
+  .session-summary {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px; font-size: .82rem; color: var(--muted);
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;
+  }
+  .session-summary b { color: var(--text); font-weight: 600; }
+
+  /* History entry actions */
+  .entry-actions { display: flex; gap: 6px; margin-top: 6px; }
+  .entry-actions button {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 6px; padding: 2px 8px; font-size: .72rem; cursor: pointer;
+  }
+  .entry-actions button:hover { color: var(--text); }
+  .entry-actions .del:hover { color: var(--danger); border-color: var(--danger); }
+  .entry-note { color: var(--muted); font-size: .78rem; margin-top: 6px; font-style: italic; }
+
+  /* Stats: chip toggle */
+  .stat-toggle { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .stat-toggle .chip {
+    background: var(--bg-3); border: 1px solid var(--line); color: var(--text);
+    border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: .8rem;
+  }
+  .stat-toggle .chip.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; color: white; font-weight: 600;
+  }
+
   @media (max-width: 380px) {
     .set-row, .set-grid-head { grid-template-columns: 24px 1fr 1fr 1fr 24px; }
     input[type=number] { width: 100%; }
+    .rest-timer { min-width: 0; width: calc(100vw - 24px); gap: 8px; }
+    .rest-timer .time { font-size: 1.3rem; min-width: 60px; }
   }
 </style>
 </head>
@@ -221,12 +320,28 @@
 <div class="modal-bg" id="statsModal">
   <div class="modal">
     <h3>Progress over time</h3>
-    <div style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Top working weight per exercise (last 8 sessions).</div>
+    <div class="stat-toggle" id="statToggle">
+      <button class="chip active" data-metric="weight">Top weight</button>
+      <button class="chip" data-metric="volume">Volume</button>
+      <button class="chip" data-metric="e1rm">Est. 1RM</button>
+    </div>
+    <div id="statsHint" style="color:var(--muted);font-size:.82rem;margin-bottom:8px"></div>
     <div id="statsBody"></div>
     <div class="row">
       <button class="btn ghost" id="closeStats">Close</button>
     </div>
   </div>
+</div>
+
+<!-- Rest timer -->
+<div class="rest-timer" id="restTimer" role="timer" aria-live="polite">
+  <div>
+    <div class="lbl">Rest</div>
+    <div class="time" id="restTime">0:00</div>
+  </div>
+  <button id="restMinus" aria-label="Subtract 15 seconds">−15s</button>
+  <button id="restPlus" aria-label="Add 15 seconds">+15s</button>
+  <button id="restStop" aria-label="Stop timer">Stop</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -305,6 +420,7 @@ const PLAN = [
 
 /* ---------- Storage ---------- */
 const LS_KEY = "ppl-tracker-v1";
+const DRAFT_KEY = "ppl-tracker-draft-v1";
 function loadAll() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }
   catch { return {}; }
@@ -314,6 +430,18 @@ function getHistory(exId) { const d = loadAll(); return d[exId] || []; }
 function pushHistory(exId, entry) {
   const d = loadAll(); d[exId] = d[exId] || []; d[exId].push(entry); saveAll(d);
 }
+function updateHistory(exId, idx, entry) {
+  const d = loadAll();
+  if (!d[exId] || !d[exId][idx]) return;
+  d[exId][idx] = entry; saveAll(d);
+}
+function deleteHistory(exId, idx) {
+  const d = loadAll();
+  if (!d[exId]) return;
+  d[exId].splice(idx, 1);
+  if (!d[exId].length) delete d[exId];
+  saveAll(d);
+}
 
 /* ---------- State ---------- */
 let currentDay = (() => {
@@ -321,7 +449,137 @@ let currentDay = (() => {
   const dow = new Date().getDay(); // 0=Sun..6=Sat
   return dow === 0 ? 7 : dow;
 })();
-let draft = {}; // { exId: [{reps, weight, band}, ...] }
+let draft = {}; // { exId: { sets: [{reps, weight, band, done}, ...], note: "" } }
+let statsMetric = "weight";
+
+/* ---------- Draft persistence ---------- */
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch {}
+}
+function loadDraft() {
+  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+  catch { draft = {}; }
+}
+function clearDraft(exId) {
+  if (exId) delete draft[exId];
+  else draft = {};
+  saveDraft();
+}
+
+/* ---------- Metrics ---------- */
+function topWeight(sets) {
+  return sets.reduce((m, s) => Math.max(m, parseFloat(s.weight) || 0), 0);
+}
+function volume(sets) {
+  return sets.reduce((sum, s) => {
+    const w = parseFloat(s.weight) || 0;
+    const r = parseFloat(s.reps) || 0;
+    return sum + w * r;
+  }, 0);
+}
+function estimate1RM(sets) {
+  // Epley formula: 1RM ≈ w * (1 + reps/30); take best across sets
+  let best = 0;
+  for (const s of sets) {
+    const w = parseFloat(s.weight) || 0;
+    const r = parseFloat(s.reps) || 0;
+    if (w > 0 && r > 0) best = Math.max(best, w * (1 + r / 30));
+  }
+  return best;
+}
+function getMaxWeightEver(exId, excludeIdx = -1) {
+  const hist = getHistory(exId);
+  let max = 0;
+  for (let i = 0; i < hist.length; i++) {
+    if (i === excludeIdx) continue;
+    max = Math.max(max, topWeight(hist[i].sets));
+  }
+  return max;
+}
+function relativeDate(iso) {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const ms = now - then;
+  const day = 86400000;
+  if (ms < 60000) return "just now";
+  if (ms < 3600000) return Math.floor(ms / 60000) + "m ago";
+  if (ms < day) return Math.floor(ms / 3600000) + "h ago";
+  if (ms < 7 * day) return Math.floor(ms / day) + "d ago";
+  const w = Math.floor(ms / (7 * day));
+  if (w < 5) return w + "w ago";
+  return Math.floor(ms / (30 * day)) + "mo ago";
+}
+
+/* ---------- Rest timer ---------- */
+const rest = { remaining: 0, target: 0, intervalId: null, done: false };
+function restSeconds(exId) {
+  // Heuristic by rep range: low reps → longer rest
+  const day = PLAN.find(d => d.exercises.some(e => e.id === exId));
+  const ex = day && day.exercises.find(e => e.id === exId);
+  if (!ex) return 90;
+  const reps = (ex.reps || "").toLowerCase();
+  const lo = parseInt(reps, 10) || 10;
+  if (lo <= 6) return 180;
+  if (lo <= 8) return 150;
+  if (lo <= 10) return 120;
+  if (lo <= 12) return 90;
+  return 60;
+}
+function fmtMS(s) {
+  const m = Math.floor(Math.max(0, s) / 60);
+  const sec = Math.max(0, s) % 60;
+  return m + ":" + String(sec).padStart(2, "0");
+}
+function startRest(seconds) {
+  rest.remaining = seconds; rest.target = seconds; rest.done = false;
+  const panel = document.getElementById("restTimer");
+  panel.classList.add("show"); panel.classList.remove("done");
+  document.getElementById("restTime").textContent = fmtMS(seconds);
+  if (rest.intervalId) clearInterval(rest.intervalId);
+  rest.intervalId = setInterval(tickRest, 1000);
+}
+function tickRest() {
+  rest.remaining--;
+  document.getElementById("restTime").textContent = fmtMS(rest.remaining);
+  if (rest.remaining <= 0 && !rest.done) {
+    rest.done = true;
+    document.getElementById("restTimer").classList.add("done");
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    beep();
+    toast("Rest complete — go!");
+    clearInterval(rest.intervalId); rest.intervalId = null;
+  }
+}
+function stopRest() {
+  if (rest.intervalId) clearInterval(rest.intervalId);
+  rest.intervalId = null;
+  document.getElementById("restTimer").classList.remove("show", "done");
+}
+function adjustRest(delta) {
+  if (!rest.intervalId && !rest.done) return;
+  rest.remaining = Math.max(0, rest.remaining + delta);
+  rest.target += delta;
+  if (rest.done && rest.remaining > 0) {
+    rest.done = false;
+    document.getElementById("restTimer").classList.remove("done");
+    rest.intervalId = setInterval(tickRest, 1000);
+  }
+  document.getElementById("restTime").textContent = fmtMS(rest.remaining);
+}
+let audioCtx = null;
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = "sine"; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.45);
+    o.start(); o.stop(audioCtx.currentTime + 0.5);
+  } catch {}
+}
 
 /* ---------- Helpers ---------- */
 function el(tag, attrs = {}, ...kids) {
@@ -386,6 +644,24 @@ function renderDay() {
     return;
   }
 
+  // Session summary
+  const today = new Date().toDateString();
+  let savedToday = 0;
+  for (const ex of day.exercises) {
+    const hist = getHistory(ex.id);
+    if (hist.some(h => new Date(h.date).toDateString() === today)) savedToday++;
+  }
+  const totalSets = day.exercises.reduce((n, ex) => {
+    const d = draft[ex.id]; if (!d) return n;
+    return n + d.sets.filter(s => s.done).length;
+  }, 0);
+  app.appendChild(
+    el("div", { class: "session-summary" },
+      el("div", {}, el("b", {}, String(savedToday)), " / " + day.exercises.length + " exercises saved today"),
+      el("div", {}, el("b", {}, String(totalSets)), " sets checked off")
+    )
+  );
+
   for (const ex of day.exercises) {
     app.appendChild(renderExercise(ex));
   }
@@ -394,21 +670,48 @@ function renderDay() {
 function renderExercise(ex) {
   const card = el("div", { class: "card", id: "card-" + ex.id });
 
+  draft[ex.id] = draft[ex.id] || prefillFromLast(ex);
+  const draftSets = draft[ex.id].sets;
+  const curTop = topWeight(draftSets);
+  const prevMax = getMaxWeightEver(ex.id);
+  const isPR = curTop > 0 && curTop > prevMax;
+  const curVol = volume(draftSets);
+
+  const nameRow = el("div", {},
+    el("div", { class: "ex-name" },
+      ex.name,
+      isPR ? el("span", { class: "pr-badge" }, "★ PR") : null,
+      curVol > 0 ? el("span", { class: "vol-tag" }, "vol ", el("b", {}, String(Math.round(curVol))), " kg") : null
+    ),
+    el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}`),
+    ex.note ? el("div", { class: "ex-note" }, ex.note) : null
+  );
+
   card.appendChild(
     el("div", { class: "ex-head" },
-      el("div", {},
-        el("div", { class: "ex-name" }, ex.name),
-        el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}`),
-        ex.note ? el("div", { class: "ex-note" }, ex.note) : null
-      ),
-      el("a", { class: "yt-btn", href: ytSearchURL(ex.q), target: "_blank", rel: "noopener" },
-        "▶ Video"
-      )
+      nameRow,
+      el("a", { class: "yt-btn", href: ytSearchURL(ex.q), target: "_blank", rel: "noopener" }, "▶ Video")
     )
   );
 
+  // Last-session hint
+  const hist = getHistory(ex.id);
+  if (hist.length) {
+    const last = hist[hist.length - 1];
+    const summary = last.sets.map(s => {
+      const r = s.reps || "—";
+      return s.weight ? `${r}×${s.weight}` : r;
+    }).join(" · ");
+    card.appendChild(
+      el("div", { class: "last-hint" },
+        el("span", { class: "lh-label" }, "Last"),
+        el("span", { class: "lh-sets" }, summary),
+        el("span", { class: "lh-ago" }, relativeDate(last.date))
+      )
+    );
+  }
+
   // Set rows
-  draft[ex.id] = draft[ex.id] || prefillFromLast(ex);
   card.appendChild(
     el("div", { class: "set-grid-head" },
       el("span", {}, "#"),
@@ -419,16 +722,26 @@ function renderExercise(ex) {
     )
   );
   const list = el("div", { class: "set-list" });
-  for (let i = 0; i < draft[ex.id].length; i++) {
+  for (let i = 0; i < draftSets.length; i++) {
     list.appendChild(renderSetRow(ex.id, i));
   }
   card.appendChild(list);
+
+  // Session note
+  card.appendChild(
+    el("textarea", {
+      class: "session-note",
+      placeholder: "Note (how it felt, form cues, …)",
+      oninput: e => { draft[ex.id].note = e.target.value; saveDraft(); }
+    })
+  );
+  card.querySelector(".session-note").value = draft[ex.id].note || "";
 
   // Actions
   const actions = el("div", { class: "ex-actions" },
     el("button", {
       class: "btn",
-      onclick: () => { draft[ex.id].push({ reps: "", weight: "", band: "" }); rerenderEx(ex.id); }
+      onclick: () => { draft[ex.id].sets.push({ reps: "", weight: "", band: "", done: false }); saveDraft(); rerenderEx(ex.id); }
     }, "+ Add set"),
     el("button", {
       class: "btn primary",
@@ -451,52 +764,100 @@ function renderExercise(ex) {
 }
 
 function renderSetRow(exId, idx) {
-  const set = draft[exId][idx];
-  const update = (k, v) => { draft[exId][idx][k] = v; };
-  return el("div", { class: "set-row" },
-    el("div", { class: "lbl" }, String(idx + 1)),
+  const set = draft[exId].sets[idx];
+  const update = (k, v) => { draft[exId].sets[idx][k] = v; saveDraft(); };
+  const row = el("div", { class: "set-row" + (set.done ? " done" : "") },
+    el("button", {
+      class: "num-btn",
+      title: set.done ? "Mark set as incomplete" : "Mark set complete & start rest timer",
+      "aria-label": "Set " + (idx + 1) + (set.done ? " complete" : ""),
+      onclick: () => {
+        const wasDone = set.done;
+        set.done = !wasDone;
+        saveDraft();
+        if (!wasDone) startRest(restSeconds(exId));
+        rerenderEx(exId);
+      }
+    }, set.done ? "✓" : String(idx + 1)),
     el("input", { type: "number", inputmode: "numeric", placeholder: "reps", value: set.reps, oninput: e => update("reps", e.target.value) }),
     el("input", { type: "number", inputmode: "decimal", step: "0.5", placeholder: "kg", value: set.weight, oninput: e => update("weight", e.target.value) }),
     el("input", { type: "text", placeholder: "band", value: set.band, oninput: e => update("band", e.target.value) }),
     el("button", { class: "rm", title: "Remove set",
-      onclick: () => { draft[exId].splice(idx, 1); if (!draft[exId].length) draft[exId].push({ reps:"", weight:"", band:"" }); rerenderEx(exId); }
+      onclick: () => {
+        draft[exId].sets.splice(idx, 1);
+        if (!draft[exId].sets.length) draft[exId].sets.push({ reps:"", weight:"", band:"", done: false });
+        saveDraft(); rerenderEx(exId);
+      }
     }, "×")
   );
+  return row;
 }
 
 function renderHistory(exId) {
   const wrap = el("div", { class: "history" });
   wrap.appendChild(el("h4", {}, "Past sessions"));
-  const hist = getHistory(exId).slice().reverse();
+  const histAll = getHistory(exId);
+  const hist = histAll.slice().reverse();
   if (!hist.length) {
     wrap.appendChild(el("div", { style: "color:var(--muted);font-size:.85rem" }, "No sessions logged yet."));
     return wrap;
   }
-  for (const entry of hist.slice(0, 12)) {
+  hist.slice(0, 12).forEach((entry, i) => {
+    const origIdx = histAll.length - 1 - i;
+    const isPR = topWeight(entry.sets) >= getMaxWeightEver(exId, origIdx) && topWeight(entry.sets) > 0;
     const e = el("div", { class: "entry" },
-      el("div", { class: "date" }, fmtDate(entry.date)),
+      el("div", { class: "date" }, fmtDate(entry.date), isPR ? el("span", { class: "pr-badge", style: "margin-left:8px" }, "★ PR") : null),
       el("div", { class: "sets" },
-        ...entry.sets.map((s, i) =>
+        ...entry.sets.map((s, j) =>
           el("span", { class: "pill" },
-            `S${i + 1}: ${s.reps || "—"} reps` +
+            `S${j + 1}: ${s.reps || "—"} reps` +
             (s.weight ? ` @ ${s.weight}kg` : "") +
             (s.band ? ` (${s.band})` : "")
           )
         )
+      ),
+      entry.note ? el("div", { class: "entry-note" }, "“" + entry.note + "”") : null,
+      el("div", { class: "entry-actions" },
+        el("button", { onclick: () => editHistoryEntry(exId, origIdx) }, "Edit"),
+        el("button", { class: "del", onclick: () => deleteHistoryEntry(exId, origIdx) }, "Delete")
       )
     );
     wrap.appendChild(e);
-  }
+  });
   return wrap;
+}
+
+function editHistoryEntry(exId, idx) {
+  // Load this entry back into the draft so it can be re-edited and re-saved.
+  if (!confirm("Load this session into the editor? It will replace your current unsaved sets, then re-saving will create a new entry. (You can delete the old one after.)")) return;
+  const entry = getHistory(exId)[idx];
+  if (!entry) return;
+  draft[exId] = {
+    sets: entry.sets.map(s => ({ reps: s.reps || "", weight: s.weight || "", band: s.band || "", done: false })),
+    note: entry.note || ""
+  };
+  saveDraft();
+  rerenderEx(exId);
+  toast("Loaded into editor");
+}
+
+function deleteHistoryEntry(exId, idx) {
+  if (!confirm("Delete this logged session?")) return;
+  deleteHistory(exId, idx);
+  toast("Session deleted");
+  rerenderEx(exId);
 }
 
 function prefillFromLast(ex) {
   const hist = getHistory(ex.id);
   if (hist.length) {
-    return hist[hist.length - 1].sets.map(s => ({ reps: s.reps || "", weight: s.weight || "", band: s.band || "" }));
+    return {
+      sets: hist[hist.length - 1].sets.map(s => ({ reps: s.reps || "", weight: s.weight || "", band: s.band || "", done: false })),
+      note: ""
+    };
   }
   const n = Math.max(1, ex.sets || 3);
-  return Array.from({ length: n }, () => ({ reps: "", weight: "", band: "" }));
+  return { sets: Array.from({ length: n }, () => ({ reps: "", weight: "", band: "", done: false })), note: "" };
 }
 
 function rerenderEx(exId) {
@@ -505,19 +866,58 @@ function rerenderEx(exId) {
   const ex = day.exercises.find(e => e.id === exId);
   const fresh = renderExercise(ex);
   old.replaceWith(fresh);
+  // Refresh the summary header
+  const summary = document.querySelector(".session-summary");
+  if (summary) {
+    // Just re-render the whole day header section
+    const today = new Date().toDateString();
+    let savedToday = 0;
+    for (const e of day.exercises) {
+      const hist = getHistory(e.id);
+      if (hist.some(h => new Date(h.date).toDateString() === today)) savedToday++;
+    }
+    const totalSets = day.exercises.reduce((n, e) => {
+      const d = draft[e.id]; if (!d) return n;
+      return n + d.sets.filter(s => s.done).length;
+    }, 0);
+    summary.innerHTML = "";
+    summary.appendChild(el("div", {}, el("b", {}, String(savedToday)), " / " + day.exercises.length + " exercises saved today"));
+    summary.appendChild(el("div", {}, el("b", {}, String(totalSets)), " sets checked off"));
+  }
 }
 
 function saveSession(exId) {
-  const sets = (draft[exId] || []).filter(s => s.reps !== "" || s.weight !== "" || s.band !== "");
+  const d = draft[exId] || { sets: [], note: "" };
+  const sets = d.sets
+    .filter(s => s.reps !== "" || s.weight !== "" || s.band !== "")
+    .map(s => ({ reps: s.reps, weight: s.weight, band: s.band }));
   if (!sets.length) { toast("Nothing to save — fill at least one set."); return; }
-  pushHistory(exId, { date: new Date().toISOString(), sets });
-  toast("Session saved ✓");
+  const prevMax = getMaxWeightEver(exId);
+  const newMax = topWeight(sets);
+  const entry = { date: new Date().toISOString(), sets };
+  if (d.note) entry.note = d.note;
+  pushHistory(exId, entry);
+  if (newMax > prevMax && newMax > 0) toast("New PR! " + newMax + " kg ★");
+  else toast("Session saved ✓");
+  // Clear this exercise's draft so next render shows prefill from new last entry
+  clearDraft(exId);
   rerenderEx(exId);
 }
 
 /* ---------- Stats ---------- */
-function openStats() {
+const METRIC_INFO = {
+  weight: { label: "Top weight", unit: "kg", hint: "Top working weight per session (last 8)." },
+  volume: { label: "Volume",     unit: "kg", hint: "Total volume (Σ reps × weight) per session (last 8)." },
+  e1rm:   { label: "Est. 1RM",   unit: "kg", hint: "Estimated 1-rep max via Epley formula (last 8)." }
+};
+function metricValue(sets, metric) {
+  if (metric === "volume") return Math.round(volume(sets));
+  if (metric === "e1rm")   return Math.round(estimate1RM(sets) * 10) / 10;
+  return topWeight(sets);
+}
+function renderStats() {
   const body = document.getElementById("statsBody");
+  document.getElementById("statsHint").textContent = METRIC_INFO[statsMetric].hint;
   body.innerHTML = "";
   for (const day of PLAN) {
     if (!day.exercises.length) continue;
@@ -527,16 +927,23 @@ function openStats() {
     for (const ex of day.exercises) {
       const hist = getHistory(ex.id);
       if (!hist.length) continue;
-      // top weight per session, last 8 sessions
-      const series = hist.slice(-8).map(h => {
-        const top = h.sets.reduce((m, s) => Math.max(m, parseFloat(s.weight) || 0), 0);
-        return top;
-      });
+      const series = hist.slice(-8).map(h => metricValue(h.sets, statsMetric));
       const max = Math.max(...series, 1);
-      const latest = series[series.length - 1];
       const chart = el("div", { class: "progress-chart" });
+      const latest = series[series.length - 1];
+      const first = series[0];
+      const trend = series.length > 1 && first > 0
+        ? Math.round(((latest - first) / first) * 100)
+        : 0;
+      const trendStr = series.length > 1
+        ? (trend >= 0 ? " · ▲" : " · ▼") + Math.abs(trend) + "%"
+        : "";
       chart.appendChild(
-        el("div", { style: "font-size:.85rem;margin-bottom:4px" }, ex.name)
+        el("div", { style: "font-size:.85rem;margin-bottom:4px;display:flex;justify-content:space-between" },
+          el("span", {}, ex.name),
+          el("span", { style: "color:var(--muted);font-size:.78rem" },
+            latest ? (latest + " " + METRIC_INFO[statsMetric].unit + trendStr) : "—")
+        )
       );
       series.forEach((v, i) => {
         const pct = Math.round((v / max) * 100);
@@ -544,7 +951,7 @@ function openStats() {
           el("div", { class: "bar-row" },
             el("div", { class: "lab" }, "Session " + (i + 1)),
             el("div", { class: "bar" }, el("div", { style: `width:${pct}%` })),
-            el("div", { class: "val" }, v ? v + " kg" : "—")
+            el("div", { class: "val" }, v ? v + " " + METRIC_INFO[statsMetric].unit : "—")
           )
         );
       });
@@ -555,6 +962,9 @@ function openStats() {
   if (!body.children.length) {
     body.appendChild(el("div", { style: "color:var(--muted)" }, "No data yet — log a few sessions first."));
   }
+}
+function openStats() {
+  renderStats();
   document.getElementById("statsModal").classList.add("open");
 }
 
@@ -592,6 +1002,7 @@ function importData(file) {
 function resetData() {
   if (!confirm("Erase ALL logged sessions? This cannot be undone.")) return;
   localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(DRAFT_KEY);
   draft = {};
   toast("All data cleared");
   renderAll();
@@ -604,6 +1015,7 @@ function setTodayTag() {
   document.getElementById("todayTag").textContent = "· " + dow;
 }
 window.addEventListener("DOMContentLoaded", () => {
+  loadDraft();
   setTodayTag();
   renderAll();
 
@@ -616,6 +1028,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("statsBtn").addEventListener("click", openStats);
   document.getElementById("closeStats").addEventListener("click", () => document.getElementById("statsModal").classList.remove("open"));
+
+  // Stats metric toggle
+  document.getElementById("statToggle").addEventListener("click", e => {
+    const btn = e.target.closest(".chip"); if (!btn) return;
+    statsMetric = btn.dataset.metric;
+    document.querySelectorAll("#statToggle .chip").forEach(c => c.classList.toggle("active", c === btn));
+    renderStats();
+  });
+
+  // Rest timer controls
+  document.getElementById("restStop").addEventListener("click", stopRest);
+  document.getElementById("restPlus").addEventListener("click", () => adjustRest(15));
+  document.getElementById("restMinus").addEventListener("click", () => adjustRest(-15));
 
   // close modal on background click
   for (const id of ["menuModal", "statsModal"]) {
