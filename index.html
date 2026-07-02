@@ -379,6 +379,42 @@
     border-color: transparent; color: white; font-weight: 600;
   }
 
+  /* Exercise variation switcher */
+  .var-chip {
+    margin-top: 8px; background: var(--bg-3); border: 1px solid var(--line);
+    color: var(--muted); border-radius: 999px; padding: 5px 12px;
+    font-size: .78rem; cursor: pointer;
+  }
+  .var-chip b { color: var(--text); font-weight: 600; }
+  .var-chip:active { transform: scale(.97); }
+  .var-sheet { max-height: 82vh; overflow-y: auto; }
+  .var-item {
+    border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px;
+    background: var(--bg-3); overflow: hidden;
+  }
+  .var-item.current { border-color: var(--accent); }
+  .var-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 10px 12px; cursor: pointer;
+  }
+  .var-name { font-weight: 600; font-size: .92rem; }
+  .var-desc { color: var(--muted); font-size: .76rem; margin-top: 2px; }
+  .var-use {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none; color: white; border-radius: 999px; padding: 6px 14px;
+    font-size: .8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .var-use:active { transform: scale(.95); }
+  .var-cur { color: var(--good); font-size: .8rem; font-weight: 700; white-space: nowrap; }
+  .var-body { display: none; border-top: 1px solid var(--line); padding: 0 12px 12px; }
+  .var-body.open { display: block; }
+  .var-day {
+    color: var(--muted); font-size: .72rem; text-transform: uppercase;
+    letter-spacing: .5px; margin: 10px 0 4px;
+  }
+  .var-ex { display: flex; justify-content: space-between; gap: 8px; font-size: .85rem; padding: 3px 0; }
+  .var-target { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
   @media (max-width: 380px) {
     .set-row, .set-grid-head { grid-template-columns: 36px 1.1fr 1fr 42px 20px; gap: 4px; }
     .cell { font-size: .95rem; min-height: 44px; }
@@ -582,6 +618,308 @@ const PAGES = [
     ]
   }
 ];
+
+/* ---------- Exercise variations: paired alternates per Push / Pull / Legs ----------
+   Each variation replaces BOTH days of its type (a = first day, b = second day)
+   so the pair stays complementary. History, PRs and drafts are tracked per
+   variation exercise id, so switching back and forth never mixes numbers. */
+const DAY_TYPE = { 1: "push", 4: "push", 2: "pull", 5: "pull", 3: "legs", 6: "legs" };
+const DAY_SIDE = { 1: "a", 4: "b", 2: "a", 5: "b", 3: "a", 6: "b" };
+const TYPE_LABEL = { push: "Push", pull: "Pull", legs: "Legs" };
+const TYPE_DAYS = { push: [1, 4], pull: [2, 5], legs: [3, 6] };
+
+const VARIATIONS = {
+  push: [
+    {
+      id: "pu1", name: "Barbell Strength", desc: "Heavy barbell pressing for raw strength.",
+      a: { focus: "Chest & Shoulders · Barbell", exercises: [
+        { id: "pu1a1", name: "Flat Barbell Bench Press", sets: 4, reps: "6–8", note: "Shoulder blades pinned, bar to mid-chest.", q: "flat barbell bench press form" },
+        { id: "pu1a2", name: "Incline Barbell Press", sets: 3, reps: "8–10", note: "30–45° bench to bias upper chest.", q: "incline barbell bench press form" },
+        { id: "pu1a3", name: "Standing Barbell Overhead Press", sets: 3, reps: "6–8", note: "Squeeze glutes, don't lean back.", q: "standing barbell overhead press form" },
+        { id: "pu1a4", name: "Weighted Dips", sets: 3, reps: "8–10", note: "Lean forward to bias chest.", q: "weighted dips form" },
+        { id: "pu1a5", name: "Dumbbell Lateral Raises", sets: 4, reps: "12–15", note: "Lead with the elbows.", q: "dumbbell lateral raise correct form" },
+        { id: "pu1a6", name: "Close-Grip Bench Press", sets: 3, reps: "8–10", note: "Hands shoulder-width, elbows tucked.", q: "close grip bench press form" },
+      ]},
+      b: { focus: "Shoulders & Triceps · Barbell", exercises: [
+        { id: "pu1b1", name: "Push Press", sets: 4, reps: "6–8", note: "Small leg dip, drive the bar overhead.", q: "push press technique" },
+        { id: "pu1b2", name: "Paused Bench Press", sets: 3, reps: "8", note: "One-second dead stop on the chest.", q: "paused bench press technique" },
+        { id: "pu1b3", name: "Cable Lateral Raises", sets: 4, reps: "12–15", note: "Constant tension on the side delts.", q: "cable lateral raise form" },
+        { id: "pu1b4", name: "Overhead EZ-Bar Extension", sets: 3, reps: "10–12", note: "Big stretch on the long head.", q: "overhead ez bar tricep extension" },
+        { id: "pu1b5", name: "Skull Crushers", sets: 3, reps: "10", note: "Lower to the forehead, elbows still.", q: "skull crusher tricep form" },
+      ]},
+    },
+    {
+      id: "pu2", name: "Dumbbell Only", desc: "Full push sessions with nothing but dumbbells.",
+      a: { focus: "Chest & Shoulders · Dumbbells", exercises: [
+        { id: "pu2a1", name: "Flat Dumbbell Press", sets: 4, reps: "8–10", note: "Deep stretch at the bottom.", q: "flat dumbbell bench press form" },
+        { id: "pu2a2", name: "Incline Dumbbell Fly", sets: 3, reps: "12–15", note: "Soft elbows — hug a barrel.", q: "incline dumbbell fly form" },
+        { id: "pu2a3", name: "Seated Dumbbell Shoulder Press", sets: 3, reps: "8–10", note: "Don't flare the elbows past 90°.", q: "seated dumbbell shoulder press form" },
+        { id: "pu2a4", name: "Dumbbell Pullover", sets: 3, reps: "10–12", note: "Chest and lats — big stretch.", q: "dumbbell pullover form" },
+        { id: "pu2a5", name: "Seated Lateral Raises", sets: 4, reps: "12–15", note: "Sitting kills the momentum.", q: "seated dumbbell lateral raise" },
+        { id: "pu2a6", name: "Dumbbell Overhead Extension", sets: 3, reps: "10–12", note: "Both hands on one bell, elbows in.", q: "dumbbell overhead tricep extension" },
+      ]},
+      b: { focus: "Shoulders & Triceps · Dumbbells", exercises: [
+        { id: "pu2b1", name: "Arnold Press", sets: 4, reps: "8–10", note: "Rotate the palms through the press.", q: "arnold press form" },
+        { id: "pu2b2", name: "Dumbbell Floor Press", sets: 3, reps: "10", note: "Triceps-biased press, pause at the floor.", q: "dumbbell floor press form" },
+        { id: "pu2b3", name: "Lean-Away Lateral Raises", sets: 4, reps: "12–15", note: "Hold a post, lean out for extra range.", q: "lean away lateral raise" },
+        { id: "pu2b4", name: "Crush Press", sets: 3, reps: "10–12", note: "Press the bells together the whole time.", q: "dumbbell crush press form" },
+        { id: "pu2b5", name: "Dumbbell Skull Crushers", sets: 3, reps: "10–12", note: "Palms facing, lower past the head.", q: "dumbbell skull crusher form" },
+      ]},
+    },
+    {
+      id: "pu3", name: "Machine & Cable", desc: "Joint-friendly pump — everything on machines and cables.",
+      a: { focus: "Chest & Shoulders · Machines", exercises: [
+        { id: "pu3a1", name: "Machine Chest Press", sets: 4, reps: "10–12", note: "Smooth reps, 2-second negatives.", q: "machine chest press form" },
+        { id: "pu3a2", name: "Pec Deck Fly", sets: 3, reps: "12–15", note: "Squeeze and pause in the middle.", q: "pec deck fly form" },
+        { id: "pu3a3", name: "Machine Shoulder Press", sets: 3, reps: "10–12", note: "Handles start at ear height.", q: "machine shoulder press form" },
+        { id: "pu3a4", name: "High-to-Low Cable Fly", sets: 3, reps: "12–15", note: "Hits the lower-chest line.", q: "high to low cable fly" },
+        { id: "pu3a5", name: "Single-Arm Cable Lateral Raise", sets: 4, reps: "12–15/arm", note: "Cable runs behind the back.", q: "single arm cable lateral raise" },
+        { id: "pu3a6", name: "Rope Overhead Extension", sets: 3, reps: "12", note: "Elbows up, reach the rope away.", q: "cable overhead tricep extension rope" },
+      ]},
+      b: { focus: "Shoulders & Triceps · Machines", exercises: [
+        { id: "pu3b1", name: "Smith Machine Overhead Press", sets: 4, reps: "8–10", note: "Fixed path — chase the reps.", q: "smith machine overhead press form" },
+        { id: "pu3b2", name: "Incline Machine Press", sets: 3, reps: "10–12", note: "Upper chest + front delts.", q: "incline machine chest press" },
+        { id: "pu3b3", name: "Machine Lateral Raises", sets: 4, reps: "12–15", note: "Pads just above the elbows.", q: "machine lateral raise form" },
+        { id: "pu3b4", name: "Tricep Pushdowns (Straight Bar)", sets: 3, reps: "10–12", note: "Elbows pinned to the ribs.", q: "straight bar tricep pushdown form" },
+        { id: "pu3b5", name: "Assisted Dips", sets: 3, reps: "10–12", note: "Full range, lean forward slightly.", q: "assisted dip machine form" },
+      ]},
+    },
+    {
+      id: "pu4", name: "Bodyweight & Bands", desc: "Home or travel — no gym required.",
+      a: { focus: "Chest & Shoulders · Bodyweight", exercises: [
+        { id: "pu4a1", name: "Weighted Push-ups", sets: 4, reps: "12–15", note: "Backpack or plate on the upper back.", q: "weighted push up form" },
+        { id: "pu4a2", name: "Deficit Push-ups", sets: 3, reps: "12–15", note: "Hands on blocks for a deep stretch.", q: "deficit push up form" },
+        { id: "pu4a3", name: "Pike Push-ups", sets: 3, reps: "8–12", note: "Hips high, head toward the floor.", q: "pike push up form" },
+        { id: "pu4a4", name: "Chest Dips (Bars or Chairs)", sets: 3, reps: "to failure", note: "Lean forward, control the depth.", q: "chest dips proper form" },
+        { id: "pu4a5", name: "Band Lateral Raises", sets: 4, reps: "15–20", note: "Stand on the band, raise to shoulder height.", q: "resistance band lateral raise" },
+        { id: "pu4a6", name: "Bench Dips", sets: 3, reps: "to failure", note: "Feet further forward = harder.", q: "bench dips form" },
+      ]},
+      b: { focus: "Shoulders & Triceps · Bodyweight", exercises: [
+        { id: "pu4b1", name: "Elevated Pike Push-ups", sets: 4, reps: "6–10", note: "Feet on a box — handstand progression.", q: "elevated pike push up" },
+        { id: "pu4b2", name: "Decline Push-ups", sets: 3, reps: "12–15", note: "Feet raised to bias upper chest and delts.", q: "decline push up form" },
+        { id: "pu4b3", name: "Band Overhead Press", sets: 3, reps: "12–15", note: "Stand on the band, press strict.", q: "resistance band overhead press" },
+        { id: "pu4b4", name: "Diamond Push-ups", sets: 3, reps: "to failure", note: "Hands in a diamond under the chest.", q: "diamond push up form" },
+        { id: "pu4b5", name: "Band Overhead Extension", sets: 3, reps: "15", note: "Band anchored behind, extend overhead.", q: "band overhead tricep extension" },
+      ]},
+    },
+    {
+      id: "pu5", name: "Hypertrophy Pump", desc: "High-rep isolation, drop sets and constant tension.",
+      a: { focus: "Chest & Shoulders · Pump", exercises: [
+        { id: "pu5a1", name: "Incline Smith Press", sets: 4, reps: "10–12", note: "Lock the path, chase the stretch.", q: "incline smith machine press" },
+        { id: "pu5a2", name: "Flat Dumbbell Fly", sets: 3, reps: "12–15", note: "Stop at chest level, squeeze back up.", q: "flat dumbbell fly form" },
+        { id: "pu5a3", name: "Low-to-High Cable Fly", sets: 3, reps: "15", note: "Finish with hands at eye height.", q: "low to high cable fly upper chest" },
+        { id: "pu5a4", name: "Lateral Raise 21s", sets: 4, reps: "21", note: "7 bottom-half + 7 top-half + 7 full.", q: "lateral raise 21s" },
+        { id: "pu5a5", name: "Cable Front Raise", sets: 3, reps: "12–15", note: "Front delts, strict tempo.", q: "cable front raise form" },
+        { id: "pu5a6", name: "Single-Arm Pushdown", sets: 3, reps: "12–15/arm", note: "Cross-body finish for the lateral head.", q: "single arm cable pushdown" },
+      ]},
+      b: { focus: "Shoulders & Triceps · Pump", exercises: [
+        { id: "pu5b1", name: "Seated Dumbbell Press (Drop Set)", sets: 4, reps: "10–12", note: "Drop ~30% after the last set, rep out.", q: "seated dumbbell shoulder press" },
+        { id: "pu5b2", name: "Wide-Grip Cable Upright Row", sets: 3, reps: "12–15", note: "Wide grip keeps the shoulders happier.", q: "wide grip cable upright row" },
+        { id: "pu5b3", name: "Lateral Raise Drop Set", sets: 4, reps: "12+", note: "Run the rack down after the last set.", q: "lateral raise drop set" },
+        { id: "pu5b4", name: "Tricep Kickbacks", sets: 3, reps: "15", note: "Elbow high and pinned.", q: "dumbbell tricep kickback form" },
+        { id: "pu5b5", name: "Overhead Cable Extension (Bar)", sets: 3, reps: "12–15", note: "Face away from the stack, elbows tight.", q: "overhead cable tricep extension bar" },
+      ]},
+    },
+  ],
+  pull: [
+    {
+      id: "pl1", name: "Barbell Strength", desc: "Heavy pulls — bar and loaded bodyweight.",
+      a: { focus: "Back Width & Biceps · Heavy", exercises: [
+        { id: "pl1a1", name: "Weighted Pull-ups", sets: 4, reps: "5–8", note: "Plates on a belt, strict reps.", q: "weighted pull up form" },
+        { id: "pl1a2", name: "Pendlay Rows", sets: 4, reps: "6–8", note: "Bar dead-stops on the floor every rep.", q: "pendlay row form" },
+        { id: "pl1a3", name: "Inverted Rows (Wide)", sets: 3, reps: "10–15", note: "Bar in a rack, body straight.", q: "inverted row form" },
+        { id: "pl1a4", name: "Band Pull-Aparts", sets: 4, reps: "15–20", note: "Rear delts — squeeze the blades.", q: "band pull apart form" },
+        { id: "pl1a5", name: "EZ-Bar Curls", sets: 4, reps: "8–10", note: "Strict, elbows at the sides.", q: "ez bar curl form" },
+        { id: "pl1a6", name: "Drag Curls", sets: 3, reps: "10–12", note: "Drag the bar up the torso.", q: "drag curl form" },
+      ]},
+      b: { focus: "Back Thickness & Biceps · Heavy", exercises: [
+        { id: "pl1b1", name: "Barbell Deadlifts", sets: 3, reps: "5", note: "Brace hard, push the floor away.", q: "barbell deadlift form" },
+        { id: "pl1b2", name: "T-Bar Rows", sets: 4, reps: "8–10", note: "Chest up, drive the elbows.", q: "t bar row form" },
+        { id: "pl1b3", name: "Barbell Shrugs", sets: 3, reps: "12–15", note: "Straight up, pause at the top.", q: "barbell shrug form" },
+        { id: "pl1b4", name: "Close-Grip Chin-ups", sets: 3, reps: "to failure", note: "Underhand, chest to the bar.", q: "close grip chin up form" },
+        { id: "pl1b5", name: "Reverse-Grip Barbell Curls", sets: 3, reps: "10–12", note: "Overhand grip — forearms and brachialis.", q: "reverse barbell curl form" },
+      ]},
+    },
+    {
+      id: "pl2", name: "Dumbbell Only", desc: "Complete pull days with just dumbbells.",
+      a: { focus: "Back Width & Biceps · Dumbbells", exercises: [
+        { id: "pl2a1", name: "One-Arm Dumbbell Rows", sets: 4, reps: "8–10/arm", note: "Elbow to the hip, no torso twist.", q: "one arm dumbbell row form" },
+        { id: "pl2a2", name: "Dumbbell Pullovers (Lat Focus)", sets: 3, reps: "10–12", note: "Elbows in, pull with the lats.", q: "dumbbell pullover lats" },
+        { id: "pl2a3", name: "Renegade Rows", sets: 3, reps: "8/arm", note: "Plank position — brace, then row.", q: "renegade row form" },
+        { id: "pl2a4", name: "Bent-Over Rear Delt Fly", sets: 4, reps: "12–15", note: "Hinge, lead with the pinkies.", q: "rear delt fly dumbbell form" },
+        { id: "pl2a5", name: "Alternating Dumbbell Curls", sets: 3, reps: "10/arm", note: "Full supination at the top.", q: "alternating dumbbell curl" },
+        { id: "pl2a6", name: "Zottman Curls", sets: 3, reps: "10–12", note: "Curl up, rotate, lower slow.", q: "zottman curl form" },
+      ]},
+      b: { focus: "Back Thickness & Biceps · Dumbbells", exercises: [
+        { id: "pl2b1", name: "Chest-Supported Dumbbell Rows", sets: 4, reps: "8–10", note: "Chest on an incline bench — zero cheating.", q: "chest supported dumbbell row" },
+        { id: "pl2b2", name: "Kroc Rows", sets: 2, reps: "15–20/arm", note: "One heavy, high-rep set per arm.", q: "kroc row form" },
+        { id: "pl2b3", name: "Dumbbell Shrugs", sets: 3, reps: "12–15", note: "Pause a beat at the top.", q: "dumbbell shrug form" },
+        { id: "pl2b4", name: "Concentration Curls", sets: 3, reps: "10–12/arm", note: "Elbow braced on the thigh.", q: "concentration curl form" },
+        { id: "pl2b5", name: "Spider Curls", sets: 3, reps: "10–12", note: "Chest on the incline bench, arms hanging.", q: "spider curl form" },
+      ]},
+    },
+    {
+      id: "pl3", name: "Machine & Cable", desc: "Smooth, chest-supported pulling — easy on the lower back.",
+      a: { focus: "Back Width & Biceps · Machines", exercises: [
+        { id: "pl3a1", name: "Neutral-Grip Pulldowns", sets: 4, reps: "10–12", note: "Palms facing — strongest pulling line.", q: "neutral grip lat pulldown" },
+        { id: "pl3a2", name: "Machine High Rows", sets: 3, reps: "10–12", note: "Pull down-and-back toward the hips.", q: "machine high row form" },
+        { id: "pl3a3", name: "Reverse Cable Fly", sets: 4, reps: "15", note: "Cross the cables, open wide.", q: "reverse cable fly rear delt" },
+        { id: "pl3a4", name: "Cable Shrugs", sets: 3, reps: "12–15", note: "Constant tension top to bottom.", q: "cable shrug form" },
+        { id: "pl3a5", name: "EZ Cable Curls", sets: 4, reps: "10–12", note: "Step back for tension at the bottom.", q: "cable curl form" },
+        { id: "pl3a6", name: "Rope Hammer Curls", sets: 3, reps: "12", note: "Neutral grip — brachialis.", q: "rope hammer curl form" },
+      ]},
+      b: { focus: "Back Thickness & Biceps · Machines", exercises: [
+        { id: "pl3b1", name: "Chest-Supported Machine Rows", sets: 4, reps: "8–10", note: "Squeeze the blades a full second.", q: "chest supported machine row" },
+        { id: "pl3b2", name: "Single-Arm Cable Rows", sets: 3, reps: "10–12/arm", note: "Let the shoulder reach, then pull.", q: "single arm cable row form" },
+        { id: "pl3b3", name: "V-Bar Pulldowns", sets: 3, reps: "10–12", note: "Close grip, elbows to the ribs.", q: "close grip v bar pulldown" },
+        { id: "pl3b4", name: "Bayesian Cable Curls", sets: 3, reps: "12/arm", note: "Cable behind you — long-head stretch.", q: "bayesian cable curl" },
+        { id: "pl3b5", name: "Machine Preacher Curls", sets: 3, reps: "10–12", note: "Slow negatives, full stretch.", q: "machine preacher curl form" },
+      ]},
+    },
+    {
+      id: "pl4", name: "Bodyweight & Bands", desc: "A bar and a band is all you need.",
+      a: { focus: "Back Width & Biceps · Bodyweight", exercises: [
+        { id: "pl4a1", name: "Pull-ups (Mixed Grips)", sets: 4, reps: "to failure", note: "Rotate wide, neutral and underhand.", q: "pull up grip variations" },
+        { id: "pl4a2", name: "Australian Rows (Underhand)", sets: 3, reps: "12–15", note: "Low bar or table edge, body straight.", q: "australian pull up underhand" },
+        { id: "pl4a3", name: "Band Straight-Arm Pulldowns", sets: 3, reps: "15", note: "Arms straight, band to the hips.", q: "band straight arm pulldown" },
+        { id: "pl4a4", name: "Band Face Pulls", sets: 4, reps: "15–20", note: "Pull to the nose, thumbs back.", q: "band face pull form" },
+        { id: "pl4a5", name: "Band Curls", sets: 3, reps: "15–20", note: "Stand on the band, strict curls.", q: "resistance band curl" },
+        { id: "pl4a6", name: "Chin-up Negatives", sets: 3, reps: "5", note: "Jump up, lower for 5 seconds.", q: "chin up negatives" },
+      ]},
+      b: { focus: "Back Thickness & Biceps · Bodyweight", exercises: [
+        { id: "pl4b1", name: "Commando Pull-ups", sets: 3, reps: "6–8/side", note: "Neutral grip along the bar, pull to each shoulder.", q: "commando pull up" },
+        { id: "pl4b2", name: "Archer Rows", sets: 3, reps: "8/side", note: "Inverted row shifted to one arm.", q: "archer inverted row" },
+        { id: "pl4b3", name: "Seated Band Rows", sets: 4, reps: "15", note: "Band around the feet, row to the belly.", q: "seated resistance band row" },
+        { id: "pl4b4", name: "Scapular Pull-ups", sets: 3, reps: "10", note: "Shrug from a dead hang — lat engagement.", q: "scapular pull up form" },
+        { id: "pl4b5", name: "Band Hammer Curls", sets: 3, reps: "15", note: "Neutral wrist, slow negatives.", q: "band hammer curl" },
+      ]},
+    },
+    {
+      id: "pl5", name: "Width & Detail Pump", desc: "High-rep lat, rear-delt and bicep pump work.",
+      a: { focus: "Back Width & Biceps · Pump", exercises: [
+        { id: "pl5a1", name: "Wide Pull-up Cluster Sets", sets: 5, reps: "5", note: "Short 20 s rests between mini-sets.", q: "pull up cluster sets" },
+        { id: "pl5a2", name: "Meadows Rows", sets: 3, reps: "10–12/arm", note: "Landmine row from a staggered stance.", q: "meadows row form" },
+        { id: "pl5a3", name: "Rope Face Pulls (High)", sets: 4, reps: "15–20", note: "Set the pulley above head height.", q: "face pull rear delt form" },
+        { id: "pl5a4", name: "Barbell Curl 21s", sets: 3, reps: "21", note: "7 bottom + 7 top + 7 full.", q: "barbell curl 21s" },
+        { id: "pl5a5", name: "Reverse Curls", sets: 3, reps: "12", note: "Overhand — forearm finisher.", q: "reverse curl form" },
+      ]},
+      b: { focus: "Back Thickness & Biceps · Pump", exercises: [
+        { id: "pl5b1", name: "Chest-Supported T-Bar Rows", sets: 4, reps: "10–12", note: "Strict — chest stays on the pad.", q: "chest supported t bar row" },
+        { id: "pl5b2", name: "Paused Cable Rows", sets: 3, reps: "12", note: "Two-second squeeze every rep.", q: "seated cable row pause reps" },
+        { id: "pl5b3", name: "Single-Arm Lat Pulldowns", sets: 3, reps: "12/arm", note: "Pull to the hip, feel the lat.", q: "single arm lat pulldown" },
+        { id: "pl5b4", name: "Incline Hammer Curls", sets: 3, reps: "12", note: "Long-head and brachialis stretch.", q: "incline hammer curl" },
+        { id: "pl5b5", name: "Cable Preacher Curls", sets: 3, reps: "12", note: "Constant tension, no rest at the top.", q: "cable preacher curl" },
+      ]},
+    },
+  ],
+  legs: [
+    {
+      id: "lg1", name: "Barbell Strength", desc: "Squat, hinge and load — classic barbell leg work.",
+      a: { focus: "Quads, Hams & Core · Barbell", exercises: [
+        { id: "lg1a1", name: "Front Squats", sets: 4, reps: "6–8", note: "Elbows high, torso upright.", q: "front squat form" },
+        { id: "lg1a2", name: "Barbell Walking Lunges", sets: 3, reps: "8/leg", note: "Long strides, knee tracks the toes.", q: "barbell walking lunge form" },
+        { id: "lg1a3", name: "Good Mornings", sets: 3, reps: "8–10", note: "Soft knees, hinge until the hams bite.", q: "good morning exercise form" },
+        { id: "lg1a4", name: "Barbell Ab Rollouts", sets: 3, reps: "8–12", note: "Plates on the bar — roll out slow.", q: "barbell ab rollout form" },
+        { id: "lg1a5", name: "Hanging Knee Raises", sets: 3, reps: "12–15", note: "Curl the pelvis, no swinging.", q: "hanging knee raise form" },
+      ]},
+      b: { focus: "Posterior Chain & Calves · Barbell", exercises: [
+        { id: "lg1b1", name: "Barbell Hip Thrusts", sets: 4, reps: "8–10", note: "Chin tucked, hard glute squeeze at the top.", q: "barbell hip thrust form" },
+        { id: "lg1b2", name: "Stiff-Leg Deadlifts", sets: 3, reps: "8–10", note: "Straighter knees than RDL — big stretch.", q: "stiff leg deadlift form" },
+        { id: "lg1b3", name: "Barbell Calf Raises", sets: 4, reps: "15–20", note: "Pause at the bottom stretch.", q: "barbell calf raise" },
+        { id: "lg1b4", name: "Landmine Rotations", sets: 3, reps: "10/side", note: "Arms long, rotate from the core.", q: "landmine rotation form" },
+        { id: "lg1b5", name: "Weighted Plank", sets: 3, reps: "45–60s", note: "Plate on the back, hips level.", q: "weighted plank form" },
+      ]},
+    },
+    {
+      id: "lg2", name: "Dumbbell Only", desc: "Legs and core with a pair of dumbbells.",
+      a: { focus: "Quads, Hams & Core · Dumbbells", exercises: [
+        { id: "lg2a1", name: "Goblet Squats", sets: 4, reps: "10–12", note: "Bell at the chest, sit between the heels.", q: "goblet squat form" },
+        { id: "lg2a2", name: "Dumbbell RDLs", sets: 3, reps: "10–12", note: "Bells brush the shins on the way down.", q: "dumbbell romanian deadlift" },
+        { id: "lg2a3", name: "Dumbbell Step-Ups", sets: 3, reps: "10/leg", note: "Drive through the top heel — no push-off.", q: "dumbbell step up form" },
+        { id: "lg2a4", name: "Weighted Crunches", sets: 3, reps: "15", note: "Plate or bell held on the chest.", q: "weighted crunch form" },
+        { id: "lg2a5", name: "Russian Twists", sets: 3, reps: "20", note: "Feet down = easier, feet up = harder.", q: "russian twist form" },
+      ]},
+      b: { focus: "Posterior Chain & Calves · Dumbbells", exercises: [
+        { id: "lg2b1", name: "Dumbbell Sumo Squats", sets: 4, reps: "10–12", note: "Wide stance, toes out — glutes and adductors.", q: "dumbbell sumo squat" },
+        { id: "lg2b2", name: "Single-Leg RDLs", sets: 3, reps: "10/leg", note: "Square hips, reach the bell to the floor.", q: "single leg rdl dumbbell" },
+        { id: "lg2b3", name: "Single-Leg Calf Raises", sets: 4, reps: "12–15/leg", note: "Hold a bell, full stretch at the bottom.", q: "single leg calf raise dumbbell" },
+        { id: "lg2b4", name: "Dumbbell Swings", sets: 3, reps: "15", note: "Hinge and snap the hips — not a squat.", q: "dumbbell swing form" },
+        { id: "lg2b5", name: "Suitcase Carries", sets: 3, reps: "30–40m", note: "Heavy bell one side, stay dead level.", q: "suitcase carry form" },
+      ]},
+    },
+    {
+      id: "lg3", name: "Machine Focus", desc: "Guided machines — push hard with less setup.",
+      a: { focus: "Quads, Hams & Core · Machines", exercises: [
+        { id: "lg3a1", name: "Hack Squats", sets: 4, reps: "8–10", note: "Deep and controlled — quads on fire.", q: "hack squat form" },
+        { id: "lg3a2", name: "Leg Extensions", sets: 3, reps: "12–15", note: "Pause a beat at lockout.", q: "leg extension form" },
+        { id: "lg3a3", name: "Adductor Machine", sets: 3, reps: "12–15", note: "Slow negatives, full range.", q: "adductor machine form" },
+        { id: "lg3a4", name: "Machine Crunches", sets: 3, reps: "12–15", note: "Exhale hard as you crunch.", q: "ab crunch machine form" },
+        { id: "lg3a5", name: "Captain's Chair Leg Raises", sets: 3, reps: "12–15", note: "Don't swing — curl the hips up.", q: "captains chair leg raise" },
+      ]},
+      b: { focus: "Posterior Chain & Calves · Machines", exercises: [
+        { id: "lg3b1", name: "Lying Leg Curls", sets: 4, reps: "10–12", note: "Hips stay pinned to the pad.", q: "lying leg curl form" },
+        { id: "lg3b2", name: "Cable Glute Kickbacks", sets: 3, reps: "12/leg", note: "Squeeze at full extension.", q: "cable glute kickback form" },
+        { id: "lg3b3", name: "Seated Calf Raises", sets: 4, reps: "15–20", note: "Soleus — pause every stretch.", q: "seated calf raise form" },
+        { id: "lg3b4", name: "45° Back Extensions", sets: 3, reps: "12–15", note: "Hinge at the hips, don't round.", q: "45 degree back extension form" },
+        { id: "lg3b5", name: "Cable Woodchoppers", sets: 3, reps: "12/side", note: "Rotate with the core, arms stay long.", q: "cable woodchopper form" },
+      ]},
+    },
+    {
+      id: "lg4", name: "Bodyweight & Bands", desc: "No equipment legs — balance, bands and burn.",
+      a: { focus: "Quads, Hams & Core · Bodyweight", exercises: [
+        { id: "lg4a1", name: "Pistol Squat Progressions", sets: 4, reps: "5–8/leg", note: "Use a box or band assist to scale.", q: "pistol squat progression" },
+        { id: "lg4a2", name: "Reverse Lunges", sets: 3, reps: "12/leg", note: "Step back, front shin vertical.", q: "reverse lunge form" },
+        { id: "lg4a3", name: "Nordic Curl Negatives", sets: 3, reps: "5–8", note: "Anchor the ankles, fight the fall.", q: "nordic hamstring curl negative" },
+        { id: "lg4a4", name: "Wall Sit", sets: 3, reps: "45–60s", note: "Thighs parallel, hands off the legs.", q: "wall sit form" },
+        { id: "lg4a5", name: "V-Ups", sets: 3, reps: "15", note: "Bend the knees to scale down.", q: "v up exercise form" },
+      ]},
+      b: { focus: "Posterior Chain & Calves · Bodyweight", exercises: [
+        { id: "lg4b1", name: "Single-Leg Glute Bridges", sets: 4, reps: "12/leg", note: "Drive through the heel, hips square.", q: "single leg glute bridge" },
+        { id: "lg4b2", name: "Band Good Mornings", sets: 3, reps: "15", note: "Band under the feet and over the neck.", q: "banded good morning" },
+        { id: "lg4b3", name: "Deficit Single-Leg Calf Raises", sets: 4, reps: "15–20/leg", note: "Toes on a step, pause at the stretch.", q: "single leg deficit calf raise" },
+        { id: "lg4b4", name: "Band Lateral Walks", sets: 3, reps: "15/side", note: "Stay low, steps small and wide.", q: "band lateral walk form" },
+        { id: "lg4b5", name: "Side Planks", sets: 3, reps: "30s/side", note: "Hips high, straight line.", q: "side plank form" },
+      ]},
+    },
+    {
+      id: "lg5", name: "Athletic Power", desc: "Explosive, unilateral and carry work.",
+      a: { focus: "Quads & Power · Athletic", exercises: [
+        { id: "lg5a1", name: "Box Jumps", sets: 4, reps: "5", note: "Explode up, step down — never jump down.", q: "box jump form" },
+        { id: "lg5a2", name: "Heels-Elevated Squats", sets: 4, reps: "10–12", note: "Plates under the heels — quad focus.", q: "heel elevated squat" },
+        { id: "lg5a3", name: "Long-Stride Walking Lunges", sets: 3, reps: "12/leg", note: "Big steps bias the glutes.", q: "walking lunge long stride" },
+        { id: "lg5a4", name: "Dead Bugs", sets: 3, reps: "10/side", note: "Low back glued to the floor.", q: "dead bug exercise form" },
+        { id: "lg5a5", name: "Hanging Knee-to-Elbows", sets: 3, reps: "10–12", note: "Knees all the way to the elbows.", q: "hanging knee to elbow" },
+      ]},
+      b: { focus: "Posterior Power · Athletic", exercises: [
+        { id: "lg5b1", name: "Trap-Bar Deadlifts", sets: 4, reps: "6–8", note: "Neutral grip, drive through the floor.", q: "trap bar deadlift form" },
+        { id: "lg5b2", name: "Kettlebell Swings", sets: 4, reps: "15", note: "Hips snap, arms just guide.", q: "kettlebell swing form" },
+        { id: "lg5b3", name: "Single-Leg Hip Thrusts", sets: 3, reps: "10/leg", note: "Shoulders on a bench, one heel down.", q: "single leg hip thrust" },
+        { id: "lg5b4", name: "Pogo Hops", sets: 4, reps: "20", note: "Stiff ankles, bounce off the toes.", q: "pogo hops calf" },
+        { id: "lg5b5", name: "Farmer's Carries", sets: 3, reps: "40m", note: "Heavy — tall posture, quick steps.", q: "farmers carry form" },
+      ]},
+    },
+  ],
+};
+
+const VAR_KEY = "ppl-variants-v1";
+let variantSel = (() => {
+  try { return JSON.parse(localStorage.getItem(VAR_KEY) || "{}"); } catch { return {}; }
+})(); // { push: "pu2", ... } — absent/"" means the original (Classic) pair
+function saveVariantSel() { localStorage.setItem(VAR_KEY, JSON.stringify(variantSel)); }
+const DEFAULT_DAYS = {}; // dayId -> { focus, exercises } captured from PLAN before any swap
+function activeVariant(type) { return VARIATIONS[type].find(v => v.id === variantSel[type]) || null; }
+function applyVariants() {
+  for (const day of PLAN) {
+    const type = DAY_TYPE[day.id];
+    if (!type) continue;
+    if (!DEFAULT_DAYS[day.id]) DEFAULT_DAYS[day.id] = { focus: day.focus, exercises: day.exercises };
+    const v = activeVariant(type);
+    const side = v ? v[DAY_SIDE[day.id]] : DEFAULT_DAYS[day.id];
+    day.focus = side.focus;
+    day.exercises = side.exercises;
+  }
+}
+applyVariants();
 
 /* ---------- Storage ---------- */
 const LS_KEY = "ppl-tracker-v1";
@@ -799,6 +1137,74 @@ function openRestSheet() {
   document.body.appendChild(bg);
   requestAnimationFrame(() => bg.classList.add("open"));
 }
+/* ---------- Variation switcher sheet ---------- */
+function openVariantSheet(type) {
+  vibrate(8);
+  const bg = el("div", { class: "sheet-bg" });
+  const sheet = el("div", { class: "sheet var-sheet" });
+  const close = () => {
+    bg.classList.remove("open");
+    setTimeout(() => bg.remove(), 300);
+  };
+  bg.addEventListener("click", e => { if (e.target === bg) close(); });
+
+  const [dayA, dayB] = TYPE_DAYS[type];
+  sheet.appendChild(el("div", { class: "sheet-handle" }));
+  sheet.appendChild(el("div", { class: "pad-head" },
+    el("div", { class: "pad-title" },
+      el("b", {}, TYPE_LABEL[type] + " variations"),
+      `Paired for Day ${dayA} & Day ${dayB} — tap a variation to preview its exercises`
+    ),
+    el("button", { class: "pad-close", type: "button", "aria-label": "Close", onclick: close }, "✕")
+  ));
+
+  const entries = [
+    { id: "", name: "Classic", desc: "The original program pair (default).",
+      a: DEFAULT_DAYS[dayA], b: DEFAULT_DAYS[dayB] },
+    ...VARIATIONS[type]
+  ];
+  const current = variantSel[type] || "";
+
+  for (const v of entries) {
+    const isCur = v.id === current;
+    const body = el("div", { class: "var-body" });
+    for (const [label, side] of [["Day " + dayA, v.a], ["Day " + dayB, v.b]]) {
+      body.appendChild(el("div", { class: "var-day" }, label + " · " + side.focus));
+      for (const ex of side.exercises) {
+        body.appendChild(el("div", { class: "var-ex" },
+          el("span", {}, ex.name),
+          el("span", { class: "var-target" }, ex.sets + " × " + ex.reps)
+        ));
+      }
+    }
+    const action = isCur
+      ? el("span", { class: "var-cur" }, "✓ In use")
+      : el("button", { class: "var-use", type: "button",
+          onclick: e => {
+            e.stopPropagation();
+            variantSel[type] = v.id;
+            saveVariantSel();
+            applyVariants();
+            close();
+            renderAll();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            toast("Switched " + TYPE_LABEL[type].toLowerCase() + " days to " + v.name);
+          } }, "Use");
+    const head = el("div", { class: "var-head", onclick: () => body.classList.toggle("open") },
+      el("div", {},
+        el("div", { class: "var-name" }, v.name),
+        el("div", { class: "var-desc" }, v.desc)
+      ),
+      action
+    );
+    sheet.appendChild(el("div", { class: "var-item" + (isCur ? " current" : "") }, head, body));
+  }
+
+  bg.appendChild(sheet);
+  document.body.appendChild(bg);
+  requestAnimationFrame(() => bg.classList.add("open"));
+}
+
 function setRestFill() {
   const f = document.getElementById("rtFill");
   if (!f) return;
@@ -1056,10 +1462,14 @@ function renderDay() {
   const app = document.getElementById("app");
   app.innerHTML = "";
   const day = PLAN.find(d => d.id === currentDay);
+  const type = DAY_TYPE[day.id];
+  const curVar = type ? activeVariant(type) : null;
   app.appendChild(
     el("div", { class: "day-header" },
       el("h2", {}, day.name),
-      el("div", { class: "sub" }, day.focus)
+      el("div", { class: "sub" }, day.focus),
+      type ? el("button", { class: "var-chip", type: "button", onclick: () => openVariantSheet(type) },
+        "⇄ ", el("b", {}, curVar ? curVar.name : "Classic"), " · change exercises") : null
     )
   );
 
@@ -1404,11 +1814,16 @@ function renderStats() {
   document.getElementById("statsHint").textContent = METRIC_INFO[statsMetric].hint;
   body.innerHTML = "";
   for (const day of PLAN) {
-    if (!day.exercises.length) continue;
+    // Include every variation's exercises so history stays visible after switching
+    const type = DAY_TYPE[day.id];
+    const exList = type
+      ? DEFAULT_DAYS[day.id].exercises.concat(...VARIATIONS[type].map(v => v[DAY_SIDE[day.id]].exercises))
+      : day.exercises;
+    if (!exList.length) continue;
     const section = el("div", { style: "margin-bottom:14px" },
       el("div", { style: "font-weight:600;margin-bottom:6px" }, day.name)
     );
-    for (const ex of day.exercises) {
+    for (const ex of exList) {
       const hist = getHistory(ex.id);
       if (!hist.length) continue;
       const series = hist.slice(-8).map(h => metricValue(h.sets, statsMetric));
