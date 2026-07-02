@@ -90,24 +90,52 @@
   }
   .yt-btn:active { transform: scale(.97); }
 
-  .set-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .set-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
   .set-row {
-    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
-    gap: 6px; align-items: center;
+    display: grid; grid-template-columns: 40px 1.15fr 1fr 48px 22px;
+    gap: 6px; align-items: stretch;
   }
-  .set-row .lbl { color: var(--muted); font-size: .82rem; text-align: center; }
-  .set-row input { width: 100%; min-width: 0; padding: 6px 8px; }
   .set-row .rm {
-    background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 1.1rem;
+    background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 1.2rem;
+    padding: 0;
   }
   .set-row .rm:hover { color: var(--danger); }
 
   .set-grid-head {
-    display: grid; grid-template-columns: 28px 1fr 1fr 1fr 28px;
-    gap: 6px; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px;
-    margin-top: 8px;
+    display: grid; grid-template-columns: 40px 1.15fr 1fr 48px 22px;
+    gap: 6px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
+    margin-top: 10px;
   }
   .set-grid-head span { text-align: center; }
+
+  .set-row .num-btn {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--muted); cursor: pointer; font-size: .92rem; min-height: 48px;
+    font-variant-numeric: tabular-nums; font-weight: 700;
+    transition: background .15s, color .15s, border-color .15s, transform .1s;
+  }
+  .set-row .num-btn:active { transform: scale(.94); }
+  .set-row.done .num-btn { background: var(--good); border-color: var(--good); color: #042018; }
+
+  .cell {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--text); cursor: pointer; min-height: 48px; min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; font-weight: 650; font-variant-numeric: tabular-nums;
+    padding: 0 4px; transition: border-color .15s, transform .1s, background .15s;
+  }
+  .cell:active { transform: scale(.96); border-color: var(--accent); }
+  .cell .ghost { color: var(--muted); font-weight: 500; opacity: .65; }
+  .cell .unit { color: var(--muted); font-size: .68rem; font-weight: 500; margin-left: 3px; }
+  .set-row.done .cell { background: rgba(52,211,153,.07); border-color: rgba(52,211,153,.3); }
+
+  .band-chip {
+    background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--muted); cursor: pointer; min-height: 48px; font-size: .82rem; font-weight: 700;
+    padding: 0; transition: transform .1s, color .15s, border-color .15s;
+  }
+  .band-chip.on { color: var(--warn); border-color: rgba(245,158,11,.45); }
+  .band-chip:active { transform: scale(.94); }
 
   .ex-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .btn {
@@ -195,15 +223,66 @@
     letter-spacing: .3px;
   }
 
-  /* Set completion */
-  .set-row .num-btn {
-    background: var(--bg-3); border: 1px solid var(--line); border-radius: 6px;
-    color: var(--muted); cursor: pointer; padding: 5px 0; font-size: .82rem;
-    font-variant-numeric: tabular-nums; font-weight: 600;
-    transition: background .15s, color .15s, border-color .15s;
+  /* Numeric keypad bottom sheet */
+  .sheet-bg {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0); display: flex;
+    align-items: flex-end; justify-content: center;
+    transition: background .2s ease; pointer-events: auto;
   }
-  .set-row.done .num-btn { background: var(--good); border-color: var(--good); color: #042018; }
-  .set-row.done input { background: rgba(52, 211, 153, .07); border-color: rgba(52, 211, 153, .3); }
+  .sheet-bg.open { background: rgba(0,0,0,.55); }
+  .sheet {
+    width: 100%; max-width: 480px;
+    background: var(--bg-2);
+    border: 1px solid var(--line); border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -16px 40px rgba(0,0,0,.5);
+    padding: 0 14px calc(12px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform .28s cubic-bezier(.2,.9,.2,1);
+    will-change: transform;
+  }
+  .sheet-bg.open .sheet { transform: translateY(0); }
+  .sheet-handle { width: 42px; height: 4px; background: var(--line); border-radius: 999px; margin: 8px auto; }
+  .pad-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .pad-title { font-size: .78rem; color: var(--muted); }
+  .pad-title b { color: var(--text); font-size: .95rem; display: block; margin-bottom: 2px; }
+  .pad-close {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 1.3rem; padding: 6px 10px; cursor: pointer;
+  }
+  .pad-value-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 2px 12px; }
+  .pad-value { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .pad-value .unit { font-size: .95rem; color: var(--muted); font-weight: 600; margin-left: 4px; }
+  .pad-value.empty { color: var(--muted); font-weight: 500; }
+  .pad-last {
+    background: var(--bg-3); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 8px 12px; font-size: .82rem; cursor: pointer; white-space: nowrap;
+  }
+  .pad-last:active { transform: scale(.95); }
+  .pad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .pad-grid button {
+    background: var(--bg-3); border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; font-size: 1.25rem; font-weight: 600; min-height: 54px;
+    cursor: pointer; transition: transform .08s, background .12s;
+  }
+  .pad-grid button:active { transform: scale(.94); background: var(--bg); }
+  .pad-grid .fn { color: var(--accent); font-size: .95rem; font-weight: 700; }
+  .pad-grid .next {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none; color: white; font-size: .92rem; font-weight: 700;
+  }
+
+  /* Rest-timer preset sheet */
+  .preset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+  .preset-grid button {
+    background: var(--bg-3); border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; font-size: 1.05rem; font-weight: 700; min-height: 56px;
+    cursor: pointer; font-variant-numeric: tabular-nums;
+    transition: transform .08s, background .12s;
+  }
+  .preset-grid button:active { transform: scale(.94); background: var(--bg); }
+  .preset-grid button small { display: block; color: var(--muted); font-size: .68rem; font-weight: 500; }
 
   /* Session note */
   .session-note {
@@ -221,12 +300,29 @@
   }
   .vol-tag b { color: var(--text); font-weight: 600; }
 
+  /* Exercise progress + collapse */
+  .sets-pill {
+    display: inline-block; margin-left: 8px; vertical-align: middle;
+    font-size: .72rem; font-weight: 700; color: var(--muted);
+    background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 999px; padding: 2px 8px;
+  }
+  .card.complete { border-color: rgba(52,211,153,.45); }
+  .card.complete .sets-pill { color: #042018; background: var(--good); border-color: var(--good); }
+  .ex-head { cursor: pointer; }
+  .ex-body.collapsed { display: none; }
+  .btn.pulse { animation: pulseBtn 1.6s ease-in-out infinite; }
+  @keyframes pulseBtn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79,140,255,.45); }
+    50%      { box-shadow: 0 0 0 8px rgba(79,140,255,0); }
+  }
+
   /* Rest timer floating panel */
   .rest-timer {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(20px + env(safe-area-inset-bottom));
     background: var(--bg-2); border: 1px solid var(--line);
-    border-radius: 14px; padding: 10px 14px; box-shadow: var(--shadow);
+    border-radius: 14px; padding: 10px 14px 14px; box-shadow: var(--shadow);
     z-index: 150; display: none; align-items: center; gap: 12px;
     min-width: 260px; max-width: calc(100vw - 24px);
   }
@@ -243,6 +339,16 @@
     border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: .85rem;
   }
   .rest-timer button:active { transform: scale(.95); }
+  .rt-bar {
+    position: absolute; left: 12px; right: 12px; bottom: 5px; height: 3px;
+    background: var(--bg-3); border-radius: 999px; overflow: hidden;
+  }
+  .rt-bar > div {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 1s linear;
+  }
+  .rest-timer.done .rt-bar > div { background: var(--good); }
 
   /* Session summary header */
   .session-summary {
@@ -274,8 +380,9 @@
   }
 
   @media (max-width: 380px) {
-    .set-row, .set-grid-head { grid-template-columns: 24px 1fr 1fr 1fr 24px; }
-    input[type=number] { width: 100%; }
+    .set-row, .set-grid-head { grid-template-columns: 36px 1.1fr 1fr 42px 20px; gap: 4px; }
+    .cell { font-size: .95rem; min-height: 44px; }
+    .set-row .num-btn, .band-chip { min-height: 44px; }
     .rest-timer { min-width: 0; width: calc(100vw - 24px); gap: 8px; }
     .rest-timer .time { font-size: 1.3rem; min-width: 60px; }
   }
@@ -286,6 +393,7 @@
   <div class="title-row">
     <div class="title">PPL Tracker <small id="todayTag"></small></div>
     <div style="display:flex; gap:6px">
+      <button class="icon-btn" id="timerBtn" title="Rest timer">&#x23F1;</button>
       <button class="icon-btn" id="statsBtn" title="Progress">&#x1F4CA;</button>
       <button class="icon-btn" id="menuBtn" title="Menu">&#x2630;</button>
     </div>
@@ -307,11 +415,13 @@
       <button class="btn" id="exportBtn">Export data (JSON)</button>
       <button class="btn" id="importBtn">Import data (JSON)</button>
       <input type="file" id="importFile" accept="application/json" style="display:none" />
+      <button class="btn" id="unitBtn">Unit: kg</button>
       <button class="btn" id="clearBtn" style="border-color:#5a1f1f;color:#ff8a8a">Reset all data</button>
       <button class="btn ghost" id="closeMenu">Close</button>
     </div>
     <div style="margin-top:14px;color:var(--muted);font-size:.85rem">
       Data is stored locally on this device (localStorage). Export regularly if you want a backup.
+      The unit toggle changes labels and stepper size only — logged numbers are not converted.
     </div>
   </div>
 </div>
@@ -342,6 +452,7 @@
   <button id="restMinus" aria-label="Subtract 15 seconds">−15s</button>
   <button id="restPlus" aria-label="Add 15 seconds">+15s</button>
   <button id="restStop" aria-label="Stop timer">Stop</button>
+  <div class="rt-bar"><div id="rtFill"></div></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -418,6 +529,60 @@ const PLAN = [
   }
 ];
 
+/* ---------- Reference pages: warm-up, cool-down, core ---------- */
+const PAGES = [
+  {
+    id: "warmup", tab: "Warm-up", name: "Warm-up · Dynamic Stretches",
+    focus: "5–8 min before every session",
+    intro: "Do these BEFORE lifting. Keep them dynamic (moving) — save long static holds for after training.",
+    items: [
+      { name: "Jumping Jacks", dur: "60s", note: "Raise heart rate and core temperature first.", q: "jumping jacks warm up form" },
+      { name: "Arm Circles & Shoulder Rolls", dur: "30s each direction", note: "Small to big circles, both ways.", q: "arm circles shoulder warm up" },
+      { name: "Band Pull-Aparts", dur: "2 × 15", note: "Primes rear delts and upper back for pressing.", q: "band pull apart warm up" },
+      { name: "Cat-Cow", dur: "10 reps", note: "Mobilises the whole spine.", q: "cat cow stretch form" },
+      { name: "World's Greatest Stretch", dur: "5 per side", note: "Hips, hamstrings and thoracic rotation in one move.", q: "worlds greatest stretch tutorial" },
+      { name: "Leg Swings (Front & Side)", dur: "10 per side", note: "Hold a rack for balance; swing loose, not forced.", q: "leg swings dynamic warm up" },
+      { name: "Hip Circles", dur: "10 each way", note: "Opens the hips before squats and lunges.", q: "hip circles mobility warm up" },
+      { name: "Scapular Push-ups", dur: "10 reps", note: "Wakes up the shoulder blades before push days.", q: "scapular push up tutorial" },
+      { name: "Bodyweight Squats", dur: "15 reps", note: "Groove the squat pattern with no load.", q: "bodyweight squat warm up form" },
+    ]
+  },
+  {
+    id: "cooldown", tab: "Cool-down", name: "Cool-down · Static Stretches",
+    focus: "5–10 min after every session",
+    intro: "Do these AFTER lifting. Hold each stretch gently — mild tension, no pain, keep breathing.",
+    items: [
+      { name: "Chest Doorway Stretch", dur: "30s per side", note: "Great after push days.", q: "doorway chest stretch" },
+      { name: "Overhead Triceps Stretch", dur: "30s per side", note: "Elbow up, hand down the spine.", q: "overhead triceps stretch" },
+      { name: "Cross-Body Shoulder Stretch", dur: "30s per side", note: "Rear delts after pull days.", q: "cross body shoulder stretch" },
+      { name: "Lat Stretch (Bar Hang or Wall)", dur: "30s", note: "Dead hang from the pull-up bar works best.", q: "lat stretch dead hang" },
+      { name: "Standing Hamstring Stretch", dur: "30s per side", note: "Hinge from the hips, keep the back flat.", q: "standing hamstring stretch form" },
+      { name: "Standing Quad Stretch", dur: "30s per side", note: "Knees together, push the hip forward.", q: "standing quad stretch form" },
+      { name: "Kneeling Hip Flexor Stretch", dur: "30s per side", note: "Squeeze the glute of the back leg.", q: "kneeling hip flexor stretch" },
+      { name: "Pigeon Pose", dur: "30s per side", note: "Deep glute stretch after leg days.", q: "pigeon pose glute stretch tutorial" },
+      { name: "Cobra Stretch", dur: "30s", note: "Opens the abs and hip flexors.", q: "cobra stretch tutorial" },
+      { name: "Child's Pose", dur: "45s", note: "Finish here — lats, spine and deep breaths.", q: "childs pose stretch tutorial" },
+    ]
+  },
+  {
+    id: "core", tab: "Core", name: "Core · Extra Ab Work",
+    focus: "Add 2–3 to any session, 2–3×/week",
+    intro: "The plan already trains abs on leg days — pick two or three of these when you want extra core volume.",
+    items: [
+      { name: "Plank", dur: "3 × 45–60s", note: "Squeeze glutes, don't let hips sag.", q: "plank proper form" },
+      { name: "Side Plank", dur: "3 × 30s per side", note: "Obliques; stack the feet, lift the hips high.", q: "side plank form" },
+      { name: "Dead Bug", dur: "3 × 10 per side", note: "Lower back stays glued to the floor.", q: "dead bug exercise form" },
+      { name: "Bird Dog", dur: "3 × 10 per side", note: "Slow and controlled, no rotation.", q: "bird dog exercise form" },
+      { name: "Hollow Body Hold", dur: "3 × 20–30s", note: "Gymnast staple for total core tension.", q: "hollow body hold tutorial" },
+      { name: "Pallof Press (Band)", dur: "3 × 12 per side", note: "Anti-rotation — pairs perfectly with your bands.", q: "pallof press band tutorial" },
+      { name: "Russian Twists", dur: "3 × 20", note: "Add weight for progression.", q: "russian twist form" },
+      { name: "Bicycle Crunches", dur: "3 × 20", note: "Slow — elbow to opposite knee.", q: "bicycle crunch proper form" },
+      { name: "V-Ups", dur: "3 × 12", note: "Advanced; bend knees to scale down.", q: "v up exercise form" },
+      { name: "Mountain Climbers", dur: "3 × 30s", note: "Core + conditioning finisher.", q: "mountain climbers form" },
+    ]
+  }
+];
+
 /* ---------- Storage ---------- */
 const LS_KEY = "ppl-tracker-v1";
 const DRAFT_KEY = "ppl-tracker-draft-v1";
@@ -444,13 +609,41 @@ function deleteHistory(exId, idx) {
 }
 
 /* ---------- State ---------- */
+const PROG_KEY = "ppl-prog-v1";
+function localDateStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function loadProg() { try { return JSON.parse(localStorage.getItem(PROG_KEY) || "null"); } catch { return null; } }
+function saveProg(p) { localStorage.setItem(PROG_KEY, JSON.stringify(p)); }
+function nextTrainingDay(n) { return n >= 6 ? 1 : n + 1; } // Day 7 (rest) sits outside the rotation
+
+let autoAdvancedTo = null;
 let currentDay = (() => {
-  // Map JS day-of-week to plan day. Mon=Day1 ... Sun=Day7
-  const dow = new Date().getDay(); // 0=Sun..6=Sat
-  return dow === 0 ? 7 : dow;
+  // Round-robin program day: the plan follows YOUR sessions, not the calendar.
+  // Resume where you left off; advance one day only after the last shown day
+  // was actually trained (a session saved). Skipped days just wait for you.
+  const today = localDateStr();
+  const st = loadProg();
+  if (!st || typeof st.current !== "number") {
+    saveProg({ current: 1, date: today, doneDate: null });
+    return 1;
+  }
+  if (st.date === today) return st.current;
+  const trainedLastVisit = st.doneDate === st.date;
+  const day = trainedLastVisit ? nextTrainingDay(st.current) : st.current;
+  if (trainedLastVisit) autoAdvancedTo = day;
+  saveProg({ current: day, date: today, doneDate: st.doneDate });
+  return day;
 })();
 let draft = {}; // { exId: { sets: [{reps, weight, band, done}, ...], note: "" } }
 let statsMetric = "weight";
+let unit = localStorage.getItem("ppl-unit") || "kg";
+const collapsed = {}; // exId -> bool, per-session card collapse
+const BANDS = ["", "L", "M", "H", "XH"];
+const BAND_NAMES = { L: "Light", M: "Medium", H: "Heavy", XH: "X-Heavy" };
+function weightStep() { return unit === "lb" ? 5 : 2.5; }
+function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch {} }
 
 /* ---------- Draft persistence ---------- */
 function saveDraft() {
@@ -509,6 +702,12 @@ function relativeDate(iso) {
   if (w < 5) return w + "w ago";
   return Math.floor(ms / (30 * day)) + "mo ago";
 }
+function ghostFor(exId, idx) {
+  // Same-index set from the most recent session — shown as a ghost value in empty cells.
+  const hist = getHistory(exId);
+  if (!hist.length) return null;
+  return hist[hist.length - 1].sets[idx] || null;
+}
 
 /* ---------- Rest timer ---------- */
 const rest = { remaining: 0, target: 0, intervalId: null, done: false };
@@ -535,12 +734,14 @@ function startRest(seconds) {
   const panel = document.getElementById("restTimer");
   panel.classList.add("show"); panel.classList.remove("done");
   document.getElementById("restTime").textContent = fmtMS(seconds);
+  setRestFill();
   if (rest.intervalId) clearInterval(rest.intervalId);
   rest.intervalId = setInterval(tickRest, 1000);
 }
 function tickRest() {
   rest.remaining--;
   document.getElementById("restTime").textContent = fmtMS(rest.remaining);
+  setRestFill();
   if (rest.remaining <= 0 && !rest.done) {
     rest.done = true;
     document.getElementById("restTimer").classList.add("done");
@@ -565,6 +766,44 @@ function adjustRest(delta) {
     rest.intervalId = setInterval(tickRest, 1000);
   }
   document.getElementById("restTime").textContent = fmtMS(rest.remaining);
+  setRestFill();
+}
+function openRestSheet() {
+  vibrate(8);
+  const bg = el("div", { class: "sheet-bg" });
+  const sheet = el("div", { class: "sheet" });
+  const close = () => {
+    bg.classList.remove("open");
+    setTimeout(() => bg.remove(), 300);
+  };
+  bg.addEventListener("click", e => { if (e.target === bg) close(); });
+
+  sheet.appendChild(el("div", { class: "sheet-handle" }));
+  sheet.appendChild(el("div", { class: "pad-head" },
+    el("div", { class: "pad-title" },
+      el("b", {}, "Rest timer"),
+      "Pick a recovery duration — heavy compounds need 2–3 min, isolation 60–90 s"
+    ),
+    el("button", { class: "pad-close", type: "button", "aria-label": "Close", onclick: close }, "✕")
+  ));
+
+  const presets = [30, 60, 90, 120, 150, 180, 240, 300];
+  const grid = el("div", { class: "preset-grid" },
+    ...presets.map(s => el("button", { type: "button",
+      onclick: () => { vibrate(10); startRest(s); close(); toast("Rest " + fmtMS(s) + " started"); }
+    }, fmtMS(s), el("small", {}, s <= 90 ? "isolation" : s <= 180 ? "compound" : "heavy")))
+  );
+  sheet.appendChild(grid);
+
+  bg.appendChild(sheet);
+  document.body.appendChild(bg);
+  requestAnimationFrame(() => bg.classList.add("open"));
+}
+function setRestFill() {
+  const f = document.getElementById("rtFill");
+  if (!f) return;
+  const pct = rest.target > 0 ? Math.max(0, Math.min(100, (rest.remaining / rest.target) * 100)) : 0;
+  f.style.width = pct + "%";
 }
 let audioCtx = null;
 function beep() {
@@ -610,20 +849,210 @@ function ytSearchURL(q) {
   return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
 }
 
+/* ---------- Numeric keypad bottom sheet ---------- */
+let pad = null; // { exId, idx, field, fresh, bg, sheet, valEl, onKey }
+
+function openPad(exId, idx, field) {
+  if (pad) closePad(true);
+  vibrate(8);
+  pad = { exId, idx, field, fresh: true };
+  const bg = el("div", { class: "sheet-bg" });
+  const sheet = el("div", { class: "sheet" });
+  bg.appendChild(sheet);
+  bg.addEventListener("click", e => { if (e.target === bg) closePad(); });
+  pad.bg = bg; pad.sheet = sheet;
+  pad.onKey = e => {
+    if (e.key === "Escape") closePad();
+    else if (e.key === "Enter") padAdvance();
+    else if (/^[0-9]$/.test(e.key)) padType(e.key);
+    else if (e.key === "." && pad.field === "weight") padType(".");
+    else if (e.key === "Backspace") padBackspace();
+  };
+  document.addEventListener("keydown", pad.onKey);
+  document.body.appendChild(bg);
+  renderPad();
+  requestAnimationFrame(() => bg.classList.add("open"));
+}
+
+function padVal() { return draft[pad.exId].sets[pad.idx][pad.field]; }
+function padCommit(v) {
+  draft[pad.exId].sets[pad.idx][pad.field] = v;
+  saveDraft();
+  renderPadValue();
+}
+function padFmt(n) {
+  if (n < 0) n = 0;
+  return String(Math.round(n * 100) / 100);
+}
+function padType(d) {
+  let v = pad.fresh ? "" : String(padVal());
+  pad.fresh = false;
+  if (d === ".") {
+    if (pad.field !== "weight" || v.includes(".")) return;
+    v = v === "" ? "0." : v + ".";
+  } else {
+    if (v.replace(".", "").length >= 5) return;
+    v = v === "0" ? d : v + d;
+  }
+  padCommit(v);
+}
+function padBackspace() {
+  pad.fresh = false;
+  padCommit(String(padVal()).slice(0, -1));
+}
+function padNudge(delta) {
+  pad.fresh = false;
+  const cur = parseFloat(padVal());
+  if (isNaN(cur)) {
+    // Nudging an empty cell starts from last session's value
+    const g = ghostFor(pad.exId, pad.idx);
+    const gv = g ? parseFloat(pad.field === "weight" ? g.weight : g.reps) : NaN;
+    padCommit(padFmt(isNaN(gv) ? Math.max(0, delta) : gv));
+    return;
+  }
+  padCommit(padFmt(cur + delta));
+}
+function padAdvance() {
+  if (!pad) return;
+  const { exId, idx, field } = pad;
+  vibrate(6);
+  if (field === "weight") {
+    pad.field = "reps"; pad.fresh = true;
+    rerenderEx(exId); renderPad();
+  } else if (idx + 1 < draft[exId].sets.length) {
+    pad.idx = idx + 1; pad.field = "weight"; pad.fresh = true;
+    rerenderEx(exId); renderPad();
+  } else {
+    closePad();
+  }
+}
+function closePad(instant) {
+  if (!pad) return;
+  const { bg, exId, onKey } = pad;
+  document.removeEventListener("keydown", onKey);
+  pad = null;
+  if (instant) bg.remove();
+  else {
+    bg.classList.remove("open");
+    setTimeout(() => bg.remove(), 300);
+  }
+  rerenderEx(exId);
+}
+function renderPadValue() {
+  if (!pad || !pad.valEl) return;
+  const v = padVal();
+  pad.valEl.className = "pad-value" + (v === "" ? " empty" : "");
+  pad.valEl.innerHTML = "";
+  if (v === "") pad.valEl.appendChild(document.createTextNode("—"));
+  else {
+    pad.valEl.appendChild(document.createTextNode(v));
+    if (pad.field === "weight") pad.valEl.appendChild(el("span", { class: "unit" }, unit));
+  }
+}
+function renderPad() {
+  const { exId, idx, field, sheet } = pad;
+  const day = PLAN.find(d => d.exercises.some(e => e.id === exId));
+  const ex = day.exercises.find(e => e.id === exId);
+  const g = ghostFor(exId, idx);
+  const isW = field === "weight";
+  const step = isW ? weightStep() : 1;
+  const total = draft[exId].sets.length;
+
+  sheet.innerHTML = "";
+  sheet.appendChild(el("div", { class: "sheet-handle" }));
+  sheet.appendChild(el("div", { class: "pad-head" },
+    el("div", { class: "pad-title" },
+      el("b", {}, ex.name),
+      `Set ${idx + 1} of ${total} · ` + (isW ? `Weight (${unit})` : "Reps")
+    ),
+    el("button", { class: "pad-close", type: "button", "aria-label": "Close", onclick: () => closePad() }, "✕")
+  ));
+
+  pad.valEl = el("div", { class: "pad-value" });
+  const lastVal = g ? (isW ? g.weight : g.reps) : "";
+  sheet.appendChild(el("div", { class: "pad-value-row" },
+    pad.valEl,
+    lastVal !== "" && lastVal != null
+      ? el("button", { class: "pad-last", type: "button",
+          onclick: () => { pad.fresh = false; vibrate(6); padCommit(String(lastVal)); } },
+          "Last: " + lastVal)
+      : null
+  ));
+  renderPadValue();
+
+  const nextLabel = isW ? "Reps →" : (idx + 1 < total ? `Set ${idx + 2} →` : "Done ✓");
+  const key = (label, fn, cls) =>
+    el("button", { class: cls || "", type: "button", onclick: () => { vibrate(5); fn(); } }, label);
+  const dig = d => key(String(d), () => padType(String(d)));
+
+  sheet.appendChild(el("div", { class: "pad-grid" },
+    dig(1), dig(2), dig(3), key("+" + step, () => padNudge(step), "fn"),
+    dig(4), dig(5), dig(6), key("−" + step, () => padNudge(-step), "fn"),
+    dig(7), dig(8), dig(9), key("⌫", () => padBackspace(), "fn"),
+    key(".", () => padType("."), isW ? "" : "fn"), dig(0),
+    key("C", () => { pad.fresh = true; padCommit(""); }, "fn"),
+    key(nextLabel, () => padAdvance(), "next")
+  ));
+}
+
 /* ---------- Render ---------- */
 function renderTabs() {
   const tabs = document.getElementById("tabs");
   tabs.innerHTML = "";
+  const labels = ["1 · Push", "2 · Pull", "3 · Legs", "4 · Push", "5 · Pull", "6 · Legs", "Rest"];
+  const progCur = (loadProg() || {}).current;
   for (const day of PLAN) {
     const t = el("button", {
       class: "tab" + (day.id === currentDay ? " active" : "") + (day.id === 7 ? " rest" : ""),
-      onclick: () => { currentDay = day.id; renderAll(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-    }, "Day " + day.id);
+      onclick: () => {
+        currentDay = day.id;
+        // Manual override: re-anchor the rotation to the day you picked
+        const st = loadProg() || {};
+        saveProg({ current: day.id, date: localDateStr(), doneDate: st.doneDate || null });
+        renderAll();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, labels[day.id - 1] + (day.id === progCur ? " •" : ""));
+    tabs.appendChild(t);
+  }
+  for (const page of PAGES) {
+    const t = el("button", {
+      class: "tab" + (page.id === currentDay ? " active" : ""),
+      onclick: () => { currentDay = page.id; renderAll(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    }, page.tab);
     tabs.appendChild(t);
   }
 }
 
+function renderPage(page) {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  app.appendChild(
+    el("div", { class: "day-header" },
+      el("h2", {}, page.name),
+      el("div", { class: "sub" }, page.focus)
+    )
+  );
+  app.appendChild(el("div", { class: "session-summary" }, el("div", {}, page.intro)));
+  for (const item of page.items) {
+    app.appendChild(
+      el("div", { class: "card" },
+        el("div", { class: "ex-head", style: "cursor:default" },
+          el("div", {},
+            el("div", { class: "ex-name" }, item.name),
+            el("div", { class: "ex-target" }, item.dur),
+            el("div", { class: "ex-note" }, item.note)
+          ),
+          el("a", { class: "yt-btn", href: ytSearchURL(item.q), target: "_blank", rel: "noopener" }, "▶ Video")
+        )
+      )
+    );
+  }
+}
+
 function renderDay() {
+  const page = PAGES.find(p => p.id === currentDay);
+  if (page) { renderPage(page); return; }
   const app = document.getElementById("app");
   app.innerHTML = "";
   const day = PLAN.find(d => d.id === currentDay);
@@ -668,31 +1097,38 @@ function renderDay() {
 }
 
 function renderExercise(ex) {
-  const card = el("div", { class: "card", id: "card-" + ex.id });
-
   draft[ex.id] = draft[ex.id] || prefillFromLast(ex);
   const draftSets = draft[ex.id].sets;
   const curTop = topWeight(draftSets);
   const prevMax = getMaxWeightEver(ex.id);
   const isPR = curTop > 0 && curTop > prevMax;
   const curVol = volume(draftSets);
+  const doneCount = draftSets.filter(s => s.done).length;
+  const allDone = draftSets.length > 0 && doneCount === draftSets.length;
+  const isCollapsed = !!collapsed[ex.id];
+
+  const card = el("div", { class: "card" + (allDone ? " complete" : ""), id: "card-" + ex.id });
 
   const nameRow = el("div", {},
     el("div", { class: "ex-name" },
       ex.name,
+      el("span", { class: "sets-pill" }, doneCount + "/" + draftSets.length),
       isPR ? el("span", { class: "pr-badge" }, "★ PR") : null,
-      curVol > 0 ? el("span", { class: "vol-tag" }, "vol ", el("b", {}, String(Math.round(curVol))), " kg") : null
+      curVol > 0 ? el("span", { class: "vol-tag" }, "vol ", el("b", {}, String(Math.round(curVol))), " " + unit) : null
     ),
-    el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}`),
-    ex.note ? el("div", { class: "ex-note" }, ex.note) : null
+    el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}` + (isCollapsed ? " · tap to expand" : "")),
+    !isCollapsed && ex.note ? el("div", { class: "ex-note" }, ex.note) : null
   );
 
   card.appendChild(
-    el("div", { class: "ex-head" },
+    el("div", { class: "ex-head", onclick: () => { collapsed[ex.id] = !isCollapsed; rerenderEx(ex.id); } },
       nameRow,
-      el("a", { class: "yt-btn", href: ytSearchURL(ex.q), target: "_blank", rel: "noopener" }, "▶ Video")
+      el("a", { class: "yt-btn", href: ytSearchURL(ex.q), target: "_blank", rel: "noopener",
+        onclick: e => e.stopPropagation() }, "▶ Video")
     )
   );
+
+  const body = el("div", { class: "ex-body" + (isCollapsed ? " collapsed" : "") });
 
   // Last-session hint
   const hist = getHistory(ex.id);
@@ -700,9 +1136,9 @@ function renderExercise(ex) {
     const last = hist[hist.length - 1];
     const summary = last.sets.map(s => {
       const r = s.reps || "—";
-      return s.weight ? `${r}×${s.weight}` : r;
+      return s.weight ? `${s.weight}×${r}` : r;
     }).join(" · ");
-    card.appendChild(
+    body.appendChild(
       el("div", { class: "last-hint" },
         el("span", { class: "lh-label" }, "Last"),
         el("span", { class: "lh-sets" }, summary),
@@ -711,12 +1147,12 @@ function renderExercise(ex) {
     );
   }
 
-  // Set rows
-  card.appendChild(
+  // Set rows — weight before reps, like every barbell in history
+  body.appendChild(
     el("div", { class: "set-grid-head" },
-      el("span", {}, "#"),
+      el("span", {}, "Set"),
+      el("span", {}, unit),
       el("span", {}, "Reps"),
-      el("span", {}, "Weight"),
       el("span", {}, "Band"),
       el("span", {}, "")
     )
@@ -725,26 +1161,32 @@ function renderExercise(ex) {
   for (let i = 0; i < draftSets.length; i++) {
     list.appendChild(renderSetRow(ex.id, i));
   }
-  card.appendChild(list);
+  body.appendChild(list);
 
   // Session note
-  card.appendChild(
+  body.appendChild(
     el("textarea", {
       class: "session-note",
       placeholder: "Note (how it felt, form cues, …)",
       oninput: e => { draft[ex.id].note = e.target.value; saveDraft(); }
     })
   );
-  card.querySelector(".session-note").value = draft[ex.id].note || "";
 
   // Actions
   const actions = el("div", { class: "ex-actions" },
     el("button", {
       class: "btn",
-      onclick: () => { draft[ex.id].sets.push({ reps: "", weight: "", band: "", done: false }); saveDraft(); rerenderEx(ex.id); }
+      onclick: () => {
+        const sets = draft[ex.id].sets;
+        const lastSet = sets[sets.length - 1];
+        sets.push(lastSet
+          ? { reps: lastSet.reps, weight: lastSet.weight, band: lastSet.band, done: false }
+          : { reps: "", weight: "", band: "", done: false });
+        saveDraft(); rerenderEx(ex.id);
+      }
     }, "+ Add set"),
     el("button", {
-      class: "btn primary",
+      class: "btn primary" + (allDone ? " pulse" : ""),
       onclick: () => saveSession(ex.id)
     }, "Save session"),
     el("button", {
@@ -755,34 +1197,71 @@ function renderExercise(ex) {
       }
     }, "History"),
   );
-  card.appendChild(actions);
+  body.appendChild(actions);
 
   // History
-  card.appendChild(renderHistory(ex.id));
+  body.appendChild(renderHistory(ex.id));
+
+  card.appendChild(body);
+  card.querySelector(".session-note").value = draft[ex.id].note || "";
 
   return card;
 }
 
 function renderSetRow(exId, idx) {
   const set = draft[exId].sets[idx];
+  const g = ghostFor(exId, idx);
   const update = (k, v) => { draft[exId].sets[idx][k] = v; saveDraft(); };
-  const row = el("div", { class: "set-row" + (set.done ? " done" : "") },
-    el("button", {
-      class: "num-btn",
-      title: set.done ? "Mark set as incomplete" : "Mark set complete & start rest timer",
-      "aria-label": "Set " + (idx + 1) + (set.done ? " complete" : ""),
-      onclick: () => {
-        const wasDone = set.done;
-        set.done = !wasDone;
-        saveDraft();
-        if (!wasDone) startRest(restSeconds(exId));
-        rerenderEx(exId);
+
+  const numBtn = el("button", {
+    class: "num-btn", type: "button",
+    title: set.done ? "Mark set as incomplete" : "Complete set & start rest timer",
+    "aria-label": "Set " + (idx + 1) + (set.done ? " complete" : ""),
+    onclick: () => {
+      const wasDone = set.done;
+      if (!wasDone) {
+        // One-tap logging: blank fields adopt last session's values on completion
+        if (set.weight === "" && g && g.weight) set.weight = g.weight;
+        if (set.reps === "" && g && g.reps) set.reps = g.reps;
+        if (set.band === "" && g && g.band) set.band = g.band;
       }
-    }, set.done ? "✓" : String(idx + 1)),
-    el("input", { type: "number", inputmode: "numeric", placeholder: "reps", value: set.reps, oninput: e => update("reps", e.target.value) }),
-    el("input", { type: "number", inputmode: "decimal", step: "0.5", placeholder: "kg", value: set.weight, oninput: e => update("weight", e.target.value) }),
-    el("input", { type: "text", placeholder: "band", value: set.band, oninput: e => update("band", e.target.value) }),
-    el("button", { class: "rm", title: "Remove set",
+      set.done = !wasDone;
+      saveDraft();
+      if (!wasDone) { vibrate(15); startRest(restSeconds(exId)); }
+      rerenderEx(exId);
+    }
+  }, set.done ? "✓" : String(idx + 1));
+
+  const wCell = el("button", {
+    class: "cell", type: "button",
+    "aria-label": "Weight, set " + (idx + 1),
+    onclick: () => openPad(exId, idx, "weight")
+  }, set.weight !== ""
+    ? el("span", {}, String(set.weight), el("span", { class: "unit" }, unit))
+    : el("span", { class: "ghost" }, g && g.weight ? String(g.weight) : "—"));
+
+  const rCell = el("button", {
+    class: "cell", type: "button",
+    "aria-label": "Reps, set " + (idx + 1),
+    onclick: () => openPad(exId, idx, "reps")
+  }, set.reps !== ""
+    ? el("span", {}, String(set.reps))
+    : el("span", { class: "ghost" }, g && g.reps ? String(g.reps) : "—"));
+
+  const bandBtn = el("button", {
+    class: "band-chip" + (set.band ? " on" : ""), type: "button",
+    title: "Band: " + (BAND_NAMES[set.band] || "none") + " — tap to cycle",
+    onclick: () => {
+      const i = BANDS.indexOf(set.band);
+      update("band", BANDS[(i + 1) % BANDS.length]);
+      vibrate(6);
+      rerenderEx(exId);
+    }
+  }, set.band || "—");
+
+  return el("div", { class: "set-row" + (set.done ? " done" : "") },
+    numBtn, wCell, rCell, bandBtn,
+    el("button", { class: "rm", type: "button", title: "Remove set",
       onclick: () => {
         draft[exId].sets.splice(idx, 1);
         if (!draft[exId].sets.length) draft[exId].sets.push({ reps:"", weight:"", band:"", done: false });
@@ -790,7 +1269,6 @@ function renderSetRow(exId, idx) {
       }
     }, "×")
   );
-  return row;
 }
 
 function renderHistory(exId) {
@@ -810,8 +1288,8 @@ function renderHistory(exId) {
       el("div", { class: "sets" },
         ...entry.sets.map((s, j) =>
           el("span", { class: "pill" },
-            `S${j + 1}: ${s.reps || "—"} reps` +
-            (s.weight ? ` @ ${s.weight}kg` : "") +
+            `S${j + 1}: ` +
+            (s.weight ? `${s.weight}${unit} × ${s.reps || "—"}` : `${s.reps || "—"} reps`) +
             (s.band ? ` (${s.band})` : "")
           )
         )
@@ -897,8 +1375,14 @@ function saveSession(exId) {
   const entry = { date: new Date().toISOString(), sets };
   if (d.note) entry.note = d.note;
   pushHistory(exId, entry);
-  if (newMax > prevMax && newMax > 0) toast("New PR! " + newMax + " kg ★");
+  if (newMax > prevMax && newMax > 0) toast("New PR! " + newMax + " " + unit + " ★");
   else toast("Session saved ✓");
+  // Mark today's program day as trained so the rotation advances next visit
+  if (typeof currentDay === "number" && currentDay >= 1 && currentDay <= 6) {
+    const td = localDateStr();
+    saveProg({ current: currentDay, date: td, doneDate: td });
+    renderTabs();
+  }
   // Clear this exercise's draft so next render shows prefill from new last entry
   clearDraft(exId);
   rerenderEx(exId);
@@ -942,7 +1426,7 @@ function renderStats() {
         el("div", { style: "font-size:.85rem;margin-bottom:4px;display:flex;justify-content:space-between" },
           el("span", {}, ex.name),
           el("span", { style: "color:var(--muted);font-size:.78rem" },
-            latest ? (latest + " " + METRIC_INFO[statsMetric].unit + trendStr) : "—")
+            latest ? (latest + " " + unit + trendStr) : "—")
         )
       );
       series.forEach((v, i) => {
@@ -951,7 +1435,7 @@ function renderStats() {
           el("div", { class: "bar-row" },
             el("div", { class: "lab" }, "Session " + (i + 1)),
             el("div", { class: "bar" }, el("div", { style: `width:${pct}%` })),
-            el("div", { class: "val" }, v ? v + " " + METRIC_INFO[statsMetric].unit : "—")
+            el("div", { class: "val" }, v ? v + " " + unit : "—")
           )
         );
       });
@@ -1018,6 +1502,10 @@ window.addEventListener("DOMContentLoaded", () => {
   loadDraft();
   setTodayTag();
   renderAll();
+  if (autoAdvancedTo) {
+    const names = ["Push", "Pull", "Legs", "Push", "Pull", "Legs"];
+    toast("Round-robin: up next is Day " + autoAdvancedTo + " · " + names[autoAdvancedTo - 1]);
+  }
 
   document.getElementById("menuBtn").addEventListener("click", openMenu);
   document.getElementById("closeMenu").addEventListener("click", closeMenu);
@@ -1025,6 +1513,18 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
   document.getElementById("importFile").addEventListener("change", e => { if (e.target.files[0]) importData(e.target.files[0]); });
   document.getElementById("clearBtn").addEventListener("click", resetData);
+
+  // Unit toggle (labels + stepper size; numbers are not converted)
+  const unitBtn = document.getElementById("unitBtn");
+  const setUnitLabel = () => { unitBtn.textContent = "Unit: " + unit; };
+  setUnitLabel();
+  unitBtn.addEventListener("click", () => {
+    unit = unit === "kg" ? "lb" : "kg";
+    localStorage.setItem("ppl-unit", unit);
+    setUnitLabel();
+    renderAll();
+    toast("Unit set to " + unit);
+  });
 
   document.getElementById("statsBtn").addEventListener("click", openStats);
   document.getElementById("closeStats").addEventListener("click", () => document.getElementById("statsModal").classList.remove("open"));
@@ -1038,6 +1538,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // Rest timer controls
+  document.getElementById("timerBtn").addEventListener("click", openRestSheet);
   document.getElementById("restStop").addEventListener("click", stopRest);
   document.getElementById("restPlus").addEventListener("click", () => adjustRest(15));
   document.getElementById("restMinus").addEventListener("click", () => adjustRest(-15));
