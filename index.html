@@ -415,6 +415,48 @@
   .var-ex { display: flex; justify-content: space-between; gap: 8px; font-size: .85rem; padding: 3px 0; }
   .var-target { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+  /* Progression hint chip */
+  .prog-hint {
+    display: inline-block; margin-left: 8px; vertical-align: middle;
+    color: #042018; font-size: .72rem; font-weight: 700;
+    background: var(--good); padding: 2px 8px; border-radius: 999px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .prog-hint:active { transform: scale(.95); }
+
+  /* Warm-up ramp sheet */
+  .warm-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: .95rem;
+  }
+  .warm-row b { font-variant-numeric: tabular-nums; }
+  .warm-pct { color: var(--muted); font-size: .8rem; }
+
+  /* Consistency streak + heatmap */
+  .consistency {
+    background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; margin-bottom: 14px;
+  }
+  .consist-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px; margin-bottom: 10px; font-size: .85rem; flex-wrap: wrap;
+  }
+  .consist-head b { font-size: 1.05rem; }
+  .hm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .hm-lab { text-align: center; color: var(--muted); font-size: .62rem; text-transform: uppercase; }
+  .hm-cell {
+    aspect-ratio: 1; border-radius: 6px; background: var(--bg);
+    border: 1px solid var(--line); display: flex; align-items: center;
+    justify-content: center; font-size: .68rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .hm-cell.on {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; color: white; font-weight: 700;
+  }
+  .hm-cell.today { outline: 2px solid var(--good); outline-offset: 1px; }
+  .hm-cell.blank { visibility: hidden; }
+
   @media (max-width: 380px) {
     .set-row, .set-grid-head { grid-template-columns: 36px 1.1fr 1fr 42px 20px; gap: 4px; }
     .cell { font-size: .95rem; min-height: 44px; }
@@ -974,6 +1016,66 @@ function getMaxWeightEver(exId, excludeIdx = -1) {
   }
   return max;
 }
+/* ---------- Progression hints ---------- */
+function topRepTarget(reps) {
+  // Top of the target rep range; null for time-based or to-failure targets
+  const s = String(reps || "").toLowerCase();
+  if (s.includes("failure") || /\d\s*s(\b|\/|$)/.test(s) || /\d+m\b/.test(s)) return null;
+  const nums = s.match(/\d+/g);
+  return nums ? Math.max(...nums.map(Number)) : null;
+}
+function progressionHint(ex) {
+  // Double progression: every top-weight set hit the top of the rep range
+  // last session → suggest one plate step more.
+  const target = topRepTarget(ex.reps);
+  if (!target) return null;
+  const hist = getHistory(ex.id);
+  if (!hist.length) return null;
+  const sets = hist[hist.length - 1].sets.filter(s => (parseFloat(s.weight) || 0) > 0);
+  if (!sets.length) return null;
+  const w = topWeight(sets);
+  const atTop = sets.filter(s => parseFloat(s.weight) === w);
+  if (!atTop.every(s => (parseFloat(s.reps) || 0) >= target)) return null;
+  return Math.round((w + weightStep()) * 100) / 100;
+}
+
+/* ---------- Session duration ---------- */
+const SESS_KEY = "ppl-sess-start-v1";
+function markSessionStart() {
+  try {
+    const cur = JSON.parse(localStorage.getItem(SESS_KEY) || "null");
+    const today = localDateStr();
+    if (!cur || cur.date !== today) localStorage.setItem(SESS_KEY, JSON.stringify({ date: today, t: Date.now() }));
+  } catch {}
+}
+function sessionElapsedMin() {
+  try {
+    const cur = JSON.parse(localStorage.getItem(SESS_KEY) || "null");
+    if (!cur || cur.date !== localDateStr()) return null;
+    return Math.max(1, Math.round((Date.now() - cur.t) / 60000));
+  } catch { return null; }
+}
+
+/* ---------- Consistency (streak + heatmap) ---------- */
+function dateKey(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function trainedDateSet() {
+  const all = loadAll();
+  const set = new Set();
+  for (const exId of Object.keys(all)) {
+    for (const entry of all[exId]) set.add(dateKey(new Date(entry.date)));
+  }
+  return set;
+}
+function currentStreak(set) {
+  let streak = 0;
+  const d = new Date();
+  if (!set.has(dateKey(d))) d.setDate(d.getDate() - 1); // today still pending doesn't break it
+  while (set.has(dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+
 function relativeDate(iso) {
   const then = new Date(iso).getTime();
   const now = Date.now();
@@ -1152,6 +1254,55 @@ function openVariantSheet(type) {
   requestAnimationFrame(() => bg.classList.add("open"));
 }
 
+/* ---------- Warm-up ramp sheet ---------- */
+function openWarmupSheet(ex) {
+  const d = draft[ex.id];
+  const w = (d && topWeight(d.sets)) || getMaxWeightEver(ex.id) || 0;
+  if (!w) { toast("Enter a working weight first"); return; }
+  vibrate(8);
+  const step = weightStep();
+  const round = x => Math.max(step, Math.round(x / step) * step);
+  const scheme = w >= step * 12
+    ? [[0.4, 10], [0.55, 6], [0.7, 4], [0.85, 2]]
+    : [[0.5, 8], [0.75, 4]];
+
+  const bg = el("div", { class: "sheet-bg" });
+  const sheet = el("div", { class: "sheet" });
+  const close = () => {
+    bg.classList.remove("open");
+    setTimeout(() => bg.remove(), 300);
+  };
+  bg.addEventListener("click", e => { if (e.target === bg) close(); });
+
+  sheet.appendChild(el("div", { class: "sheet-handle" }));
+  sheet.appendChild(el("div", { class: "pad-head" },
+    el("div", { class: "pad-title" },
+      el("b", {}, ex.name + " — warm-up"),
+      "Ramp up to your working weight of " + w + " " + unit
+    ),
+    el("button", { class: "pad-close", type: "button", "aria-label": "Close", onclick: close }, "✕")
+  ));
+
+  let prev = 0;
+  for (const [pct, reps] of scheme) {
+    const wu = round(w * pct);
+    if (wu >= w || wu === prev) continue; // skip steps that collapse into each other
+    prev = wu;
+    sheet.appendChild(el("div", { class: "warm-row" },
+      el("span", { class: "warm-pct" }, Math.round(pct * 100) + "%"),
+      el("b", {}, wu + " " + unit + " × " + reps)
+    ));
+  }
+  sheet.appendChild(el("div", { class: "warm-row", style: "border-bottom:none" },
+    el("span", { class: "warm-pct" }, "then"),
+    el("b", {}, "working sets · " + w + " " + unit + " × " + ex.reps)
+  ));
+
+  bg.appendChild(sheet);
+  document.body.appendChild(bg);
+  requestAnimationFrame(() => bg.classList.add("open"));
+}
+
 function setRestFill() {
   const f = document.getElementById("rtFill");
   if (!f) return;
@@ -1230,6 +1381,7 @@ function openPad(exId, idx, field) {
 function padVal() { return draft[pad.exId].sets[pad.idx][pad.field]; }
 function padCommit(v) {
   draft[pad.exId].sets[pad.idx][pad.field] = v;
+  if (v !== "") markSessionStart();
   saveDraft();
   renderPadValue();
 }
@@ -1441,10 +1593,13 @@ function renderDay() {
     const d = draft[ex.id]; if (!d) return n;
     return n + d.sets.filter(s => s.done).length;
   }, 0);
+  const elapsed = sessionElapsedMin();
   app.appendChild(
     el("div", { class: "session-summary" },
       el("div", {}, el("b", {}, String(savedToday)), " / " + day.exercises.length + " exercises saved today"),
-      el("div", {}, el("b", {}, String(totalSets)), " sets checked off")
+      el("div", {}, el("b", {}, String(totalSets)), " sets checked off"),
+      el("div", { id: "sessDur", style: elapsed == null ? "display:none" : "" },
+        "⏱ ", el("b", {}, elapsed == null ? "" : String(elapsed)), " min")
     )
   );
 
@@ -1463,6 +1618,7 @@ function renderExercise(ex) {
   const doneCount = draftSets.filter(s => s.done).length;
   const allDone = draftSets.length > 0 && doneCount === draftSets.length;
   const isCollapsed = !!collapsed[ex.id];
+  const hintW = progressionHint(ex);
 
   const card = el("div", { class: "card" + (allDone ? " complete" : ""), id: "card-" + ex.id });
 
@@ -1471,7 +1627,14 @@ function renderExercise(ex) {
       ex.name,
       el("span", { class: "sets-pill" }, doneCount + "/" + draftSets.length),
       isPR ? el("span", { class: "pr-badge" }, "★ PR") : null,
-      curVol > 0 ? el("span", { class: "vol-tag" }, "vol ", el("b", {}, String(Math.round(curVol))), " " + unit) : null
+      curVol > 0 ? el("span", { class: "vol-tag" }, "vol ", el("b", {}, String(Math.round(curVol))), " " + unit) : null,
+      hintW ? el("span", { class: "prog-hint", title: "You hit the top of the rep range last time — tap to load this weight into today's sets",
+        onclick: e => {
+          e.stopPropagation();
+          for (const s of draft[ex.id].sets) if (!s.done) s.weight = hintW;
+          saveDraft(); vibrate(10); rerenderEx(ex.id);
+          toast("Sets loaded at " + hintW + " " + unit + " — go get it");
+        } }, "↑ try " + hintW) : null
     ),
     el("div", { class: "ex-target" }, `Target: ${ex.sets} × ${ex.reps}` + (isCollapsed ? " · tap to expand" : "")),
     !isCollapsed && ex.note ? el("div", { class: "ex-note" }, ex.note) : null
@@ -1553,6 +1716,7 @@ function renderExercise(ex) {
         h.classList.toggle("open");
       }
     }, "History"),
+    el("button", { class: "btn ghost", onclick: () => openWarmupSheet(ex) }, "Warm-up"),
   );
   body.appendChild(actions);
 
@@ -1584,7 +1748,7 @@ function renderSetRow(exId, idx) {
       }
       set.done = !wasDone;
       saveDraft();
-      if (!wasDone) { vibrate(15); startRest(restSeconds(exId)); }
+      if (!wasDone) { markSessionStart(); vibrate(15); startRest(restSeconds(exId)); }
       rerenderEx(exId);
     }
   }, set.done ? "✓" : String(idx + 1));
@@ -1641,7 +1805,9 @@ function renderHistory(exId) {
     const origIdx = histAll.length - 1 - i;
     const isPR = topWeight(entry.sets) >= getMaxWeightEver(exId, origIdx) && topWeight(entry.sets) > 0;
     const e = el("div", { class: "entry" },
-      el("div", { class: "date" }, fmtDate(entry.date), isPR ? el("span", { class: "pr-badge", style: "margin-left:8px" }, "★ PR") : null),
+      el("div", { class: "date" }, fmtDate(entry.date),
+        entry.dur ? el("span", { style: "color:var(--muted);margin-left:6px" }, "· " + entry.dur + " min in") : null,
+        isPR ? el("span", { class: "pr-badge", style: "margin-left:8px" }, "★ PR") : null),
       el("div", { class: "sets" },
         ...entry.sets.map((s, j) =>
           el("span", { class: "pill" },
@@ -1718,6 +1884,9 @@ function rerenderEx(exId) {
     summary.innerHTML = "";
     summary.appendChild(el("div", {}, el("b", {}, String(savedToday)), " / " + day.exercises.length + " exercises saved today"));
     summary.appendChild(el("div", {}, el("b", {}, String(totalSets)), " sets checked off"));
+    const elapsed = sessionElapsedMin();
+    summary.appendChild(el("div", { id: "sessDur", style: elapsed == null ? "display:none" : "" },
+      "⏱ ", el("b", {}, elapsed == null ? "" : String(elapsed)), " min"));
   }
 }
 
@@ -1731,6 +1900,8 @@ function saveSession(exId) {
   const newMax = topWeight(sets);
   const entry = { date: new Date().toISOString(), sets };
   if (d.note) entry.note = d.note;
+  const dur = sessionElapsedMin();
+  if (dur) entry.dur = dur;
   pushHistory(exId, entry);
   if (newMax > prevMax && newMax > 0) toast("New PR! " + newMax + " " + unit + " ★");
   else toast("Session saved ✓");
@@ -1760,6 +1931,7 @@ function renderStats() {
   const body = document.getElementById("statsBody");
   document.getElementById("statsHint").textContent = METRIC_INFO[statsMetric].hint;
   body.innerHTML = "";
+  body.appendChild(renderConsistency());
   for (const day of PLAN) {
     // Include every variation's exercises so history stays visible after switching
     const type = DAY_TYPE[day.id];
@@ -1805,9 +1977,43 @@ function renderStats() {
     }
     if (section.children.length > 1) body.appendChild(section);
   }
-  if (!body.children.length) {
+  if (body.children.length === 1) { // only the consistency card
     body.appendChild(el("div", { style: "color:var(--muted)" }, "No data yet — log a few sessions first."));
   }
+}
+
+function renderConsistency() {
+  const trained = trainedDateSet();
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const monthPrefix = todayKey.slice(0, 8);
+  let monthCount = 0;
+  for (const k of trained) if (k.startsWith(monthPrefix)) monthCount++;
+  const streak = currentStreak(trained);
+
+  const wrap = el("div", { class: "consistency" },
+    el("div", { class: "consist-head" },
+      el("span", {}, "🔥 ", el("b", {}, String(streak)), streak === 1 ? " day streak" : " days streak"),
+      el("span", { style: "color:var(--muted)" },
+        el("b", { style: "color:var(--text)" }, String(monthCount)),
+        " workouts in " + now.toLocaleDateString(undefined, { month: "long" }))
+    )
+  );
+
+  const grid = el("div", { class: "hm-grid" });
+  for (const d of ["M", "T", "W", "T", "F", "S", "S"]) grid.appendChild(el("div", { class: "hm-lab" }, d));
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const offset = (first.getDay() + 6) % 7; // Monday-first
+  for (let i = 0; i < offset; i++) grid.appendChild(el("div", { class: "hm-cell blank" }));
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = monthPrefix + String(day).padStart(2, "0");
+    grid.appendChild(el("div", {
+      class: "hm-cell" + (trained.has(key) ? " on" : "") + (key === todayKey ? " today" : "")
+    }, String(day)));
+  }
+  wrap.appendChild(grid);
+  return wrap;
 }
 function openStats() {
   renderStats();
@@ -1898,6 +2104,16 @@ window.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("#statToggle .chip").forEach(c => c.classList.toggle("active", c === btn));
     renderStats();
   });
+
+  // Live session-duration ticker
+  setInterval(() => {
+    const e = document.getElementById("sessDur");
+    if (!e) return;
+    const m = sessionElapsedMin();
+    if (m == null) { e.style.display = "none"; return; }
+    e.style.display = "";
+    e.replaceChildren("⏱ ", el("b", {}, String(m)), " min");
+  }, 30000);
 
   // Rest timer controls
   document.getElementById("timerBtn").addEventListener("click", openRestSheet);
